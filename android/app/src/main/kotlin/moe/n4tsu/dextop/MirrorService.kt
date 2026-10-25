@@ -7936,6 +7936,12 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             })
         addCustomControls(panel, overlayButtonOrder())
         panel.addView(actionButton(R.drawable.ic_edit, "Mapping Visual") { showVisualMappingEditor() })
+        val navigationRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        navigationRow.addView(actionButton(R.drawable.ic_chevron, "BACK") { performGlobalAction(GLOBAL_ACTION_BACK) },
+            LinearLayout.LayoutParams(0, dp(44), 1f).apply { rightMargin = dp(5) })
+        navigationRow.addView(actionButton(R.drawable.ic_chevron, "HOME") { performGlobalAction(GLOBAL_ACTION_HOME) },
+            LinearLayout.LayoutParams(0, dp(44), 1f).apply { leftMargin = dp(5) })
+        panel.addView(navigationRow, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(4) })
         panel.addView(
             actionButton(
                 if (overlayLayoutEditing) R.drawable.ic_chevron else R.drawable.ic_edit,
