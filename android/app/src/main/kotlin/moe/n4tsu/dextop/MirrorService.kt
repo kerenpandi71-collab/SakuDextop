@@ -3230,33 +3230,33 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                     ?: return@setOnTouchListener false
                 when (event.actionMasked) {
                     MotionEvent.ACTION_DOWN -> {
-                        view.setTag(R.id.assistant_bubble_touch_x, event.rawX)
-                        view.setTag(R.id.assistant_bubble_touch_y, event.rawY)
-                        view.setTag(R.id.assistant_bubble_start_x, params.rightMargin)
-                        view.setTag(R.id.assistant_bubble_start_y, params.topMargin)
-                        view.setTag(R.id.assistant_bubble_dragged, false)
+                        view.tag = mutableMapOf<String, Any>(
+                            "downX" to event.rawX,
+                            "downY" to event.rawY,
+                            "startRight" to params.rightMargin,
+                            "startTop" to params.topMargin,
+                            "dragged" to false,
+                        )
                         true
                     }
                     MotionEvent.ACTION_MOVE -> {
-                        val startX = (view.getTag(R.id.assistant_bubble_touch_x) as? Float) ?: event.rawX
-                        val startY = (view.getTag(R.id.assistant_bubble_touch_y) as? Float) ?: event.rawY
-                        val dx = event.rawX - startX
-                        val dy = event.rawY - startY
+                        val state = view.tag as? MutableMap<String, Any> ?: return@setOnTouchListener true
+                        val dx = event.rawX - (state["downX"] as Float)
+                        val dy = event.rawY - (state["downY"] as Float)
                         if (kotlin.math.abs(dx) > dp(5) || kotlin.math.abs(dy) > dp(5)) {
-                            view.setTag(R.id.assistant_bubble_dragged, true)
+                            state["dragged"] = true
                         }
-                        if (view.getTag(R.id.assistant_bubble_dragged) == true) {
-                            val startRight = (view.getTag(R.id.assistant_bubble_start_x) as? Int) ?: dp(8)
-                            val startTop = (view.getTag(R.id.assistant_bubble_start_y) as? Int) ?: 0
-                            params.rightMargin = (startRight - dx.toInt()).coerceAtLeast(0)
-                            params.topMargin = (startTop + dy.toInt()).coerceAtLeast(0)
+                        if (state["dragged"] == true) {
+                            params.rightMargin = ((state["startRight"] as Int) - dx.toInt()).coerceAtLeast(0)
+                            params.topMargin = ((state["startTop"] as Int) + dy.toInt()).coerceAtLeast(0)
                             params.gravity = Gravity.TOP or Gravity.END
                             view.layoutParams = params
                         }
                         true
                     }
                     MotionEvent.ACTION_UP -> {
-                        if (view.getTag(R.id.assistant_bubble_dragged) != true) toggleMenu()
+                        val state = view.tag as? MutableMap<*, *>
+                        if (state?.get("dragged") != true) toggleMenu()
                         true
                     }
                     MotionEvent.ACTION_CANCEL -> true
