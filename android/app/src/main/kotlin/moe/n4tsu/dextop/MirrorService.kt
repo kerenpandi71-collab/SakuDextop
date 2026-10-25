@@ -3234,7 +3234,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                             "downX" to event.rawX,
                             "downY" to event.rawY,
                             "startRight" to params.rightMargin,
-                            "startTop" to params.topMargin,
+                            "startTop" to view.top,
                             "dragged" to false,
                         )
                         true
@@ -10051,17 +10051,6 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         }
         val nativeTouchpadAvailable = useVirtualMouse &&
                 virtualPointerRegisteredProfile == "touchpad"
-        if (false && experimentalMultiTouch && !nativeTouchpadAvailable && !imeDirectTouch &&
-            handleExperimentalEdgeGesture(event)
-        ) {
-            if (nativeTouchpadGestureActive || virtualTouchpadActiveContactCount() > 0) {
-                finishVirtualTouchpadGesture(
-                    "dextop_edge_gesture_intercept",
-                    allowVirtualPointer
-                )
-            }
-            return true
-        }
         if (useDirectTouch && experimentalMultiTouch) {
             injectDirectTouch(event)
             if (imeDirectTouch && (event.actionMasked == MotionEvent.ACTION_UP ||
