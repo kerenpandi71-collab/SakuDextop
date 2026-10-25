@@ -3766,9 +3766,9 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         val topRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            addView(gamepadTrigger("L2", PrivilegedInputProtocol.GAMEPAD_AXIS_LTRIGGER, PrivilegedInputProtocol.GAMEPAD_BUTTON_L2, palette),
+            addView(gamepadTrigger("L2", PrivilegedInputProtocol.GAMEPAD_AXIS_TRIGGER_L, PrivilegedInputProtocol.GAMEPAD_BUTTON_L2, palette),
                 LinearLayout.LayoutParams(0, dp(42), 1f).apply { rightMargin = dp(3) })
-            addView(gamepadTrigger("R2", PrivilegedInputProtocol.GAMEPAD_AXIS_RTRIGGER, PrivilegedInputProtocol.GAMEPAD_BUTTON_R2, palette),
+            addView(gamepadTrigger("R2", PrivilegedInputProtocol.GAMEPAD_AXIS_TRIGGER_R, PrivilegedInputProtocol.GAMEPAD_BUTTON_R2, palette),
                 LinearLayout.LayoutParams(0, dp(42), 1f).apply { leftMargin = dp(3) })
         }
         body.addView(topRow, LinearLayout.LayoutParams(-1, dp(46)))
