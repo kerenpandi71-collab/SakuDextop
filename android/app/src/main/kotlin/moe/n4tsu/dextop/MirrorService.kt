@@ -2655,6 +2655,11 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         root?.postDelayed({
             if (active) {
                 if (laptopModeActive) {
+                    if (keyboardDeckStyle == KeyboardDeckStyle.GAMEPAD) {
+                        // Recreate the gamepad deck so rotation swaps the single
+                        // controller for the split analog-left/action-right layout.
+                        rebuildLaptopDeck()
+                    }
                     updateLaptopHostLayout()
                     applyLaptopGeometryWhenLaidOut(true, preserveMenu = true)
                 }
@@ -10215,12 +10220,9 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 if (completedDirectTouch) {
                     Unit
                 } else if (threeFinger || maxPointers >= 3) {
-                    // A real touchpad profile has already bypassed the legacy
-                    // edge recognizer above. Always retain Dextop's configured
-                    // three-finger action as the emergency menu/exit path.
-                    if (!experimentalMultiTouch || nativeTouchpadAvailable) {
-                        performConfiguredGesture()
-                    }
+                    // The assistant bubble is now the explicit menu entry point.
+                    // Consume three-finger gestures only to avoid accidental clicks.
+                    // Do not dispatch the former configured menu gesture here.
                 } else if (longPressTriggered && dragHeld) {
                     if (useVirtualMouse) {
                         virtualMouseButton("BTN_LEFT", false, allowVirtualPointer)
