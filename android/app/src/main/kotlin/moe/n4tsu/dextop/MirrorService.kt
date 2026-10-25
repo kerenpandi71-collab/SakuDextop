@@ -3647,6 +3647,8 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         gravity = Gravity.CENTER
         setPadding(dp(3), dp(8), dp(3), dp(8))
         setBackgroundColor(Color.TRANSPARENT)
+        isClickable = true
+        setOnTouchListener { _, _ -> true }
         fun stick(label: String, axisX: Int, axisY: Int): View {
             val group = LinearLayout(this@MirrorService).apply {
                 orientation = LinearLayout.VERTICAL
@@ -4229,7 +4231,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         content.orientation = if (horizontal) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
 
         if (horizontal && laptopLandscapeAnalogDeck == null) {
-            val palette = loadLaptopPalette()
+            val palette = laptopPalette()
             laptopLandscapeAnalogDeck = buildLandscapeAnalogDeck(palette).also { analog ->
                 content.addView(analog, 0, LinearLayout.LayoutParams(0, -1, .5f))
             }
