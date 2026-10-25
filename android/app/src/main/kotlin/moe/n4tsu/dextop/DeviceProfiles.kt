@@ -40,7 +40,7 @@ internal object DeviceProfiles {
                     id = "sony_xperia",
                     defaultWindowManager = "dextop_plasma_v2",
                     untrustedMirrorDisplay = true,
-                    fullscreenApplicationDisplays = true,
+                    fullscreenApplicationDisplays = false,
                     passivePlasmaShellFocus = true,
                     maxRateApplicationDisplays = true,
                     plasmaApplicationOverlay = identity.sdk <= 35,
@@ -61,7 +61,7 @@ internal object DeviceProfiles {
                 .copy(
                     directPlasmaDisplay = true,
                     untrustedMirrorDisplay = true,
-                    fullscreenApplicationDisplays = true,
+                    fullscreenApplicationDisplays = false,
                     privateApplicationDisplays = true,
                     passivePlasmaShellFocus = true,
                     defaultWindowManager = "dextop_plasma_v2",
