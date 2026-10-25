@@ -3792,14 +3792,16 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             val prefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
             data class SkillSpec(val label: String, val icon: String, val color: Int, val sizeDp: Int, val x: Float, val y: Float)
             val specs = listOf(
-                SkillSpec("FIRE ALL", "❄", Color.rgb(90,180,229), 55, .204f, .83f),
-                SkillSpec("REGEN", "✚", Color.rgb(108,224,108), 55, .375f, .83f),
-                SkillSpec("FLICKER", "⚡", Color.rgb(255,204,0), 55, .546f, .83f),
-                SkillSpec("BUFF", "💧", Color.rgb(102,179,255), 65, .730f, .81f),
-                SkillSpec("CC", "✦", Color.rgb(163,102,255), 55, .651f, .49f),
-                SkillSpec("CONCEAL", "◉", Color.rgb(77,255,234), 60, .868f, .50f),
-                SkillSpec("ULT", "⚔", Color.rgb(77,140,255), 85, .730f, .81f),
-                SkillSpec("ATTACK", "⚔", Color.rgb(153,204,255), 110, .934f, .74f)
+                SkillSpec("FIRE ALL", "❄", Color.rgb(90,180,229), 55, .13f, .84f),
+                SkillSpec("REGEN", "✚", Color.rgb(108,224,108), 55, .29f, .84f),
+                SkillSpec("FLICKER", "⚡", Color.rgb(255,204,0), 55, .45f, .84f),
+                SkillSpec("BUFF", "💧", Color.rgb(102,179,255), 65, .62f, .82f),
+                SkillSpec("S1", "▲", Color.rgb(255,157,0), 60, .55f, .72f),
+                SkillSpec("S2", "◆", Color.rgb(0,229,255), 60, .72f, .62f),
+                SkillSpec("S3", "✦", Color.rgb(196,110,255), 85, .84f, .80f),
+                SkillSpec("CC", "✦", Color.rgb(163,102,255), 55, .72f, .42f),
+                SkillSpec("CONCEAL", "◉", Color.rgb(77,255,234), 60, .91f, .43f),
+                SkillSpec("ATTACK", "⚔", Color.rgb(153,204,255), 110, .94f, .88f)
             )
             specs.forEach { spec ->
                 val key = spec.label.replace(" ", "_")
@@ -3827,12 +3829,41 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                     }
                     elevation = dp(5).toFloat()
                     rotation = angle
+                    var aimStartX = 0f
+                    var aimStartY = 0f
+                    var aimDownX = 0f
+                    var aimDownY = 0f
                     setOnTouchListener { view, event ->
                         val nx = prefs.getFloat("${key}_x", spec.x)
                         val ny = prefs.getFloat("${key}_y", spec.y)
                         when (event.actionMasked) {
-                            MotionEvent.ACTION_DOWN -> { view.scaleX = .95f; view.scaleY = .95f; injectTouch(MotionEvent.ACTION_DOWN, nx * (targetWidth - 1), ny * (targetHeight - 1)); true }
-                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { injectTouch(MotionEvent.ACTION_UP, nx * (targetWidth - 1), ny * (targetHeight - 1)); view.scaleX = 1f; view.scaleY = 1f; true }
+                            MotionEvent.ACTION_DOWN -> {
+                                view.scaleX = .95f; view.scaleY = .95f
+                                aimDownX = event.rawX; aimDownY = event.rawY
+                                aimStartX = nx * (targetWidth - 1); aimStartY = ny * (targetHeight - 1)
+                                injectTouch(MotionEvent.ACTION_DOWN, aimStartX, aimStartY)
+                                true
+                            }
+                            MotionEvent.ACTION_MOVE -> {
+                                // Drag while holding S1/S2/S3 to steer the skill aim across the virtual display.
+                                if (key == "S1" || key == "S2" || key == "S3") {
+                                    val dx = (event.rawX - aimDownX) * targetWidth / layer.width.coerceAtLeast(1)
+                                    val dy = (event.rawY - aimDownY) * targetHeight / layer.height.coerceAtLeast(1)
+                                    injectTouch(MotionEvent.ACTION_MOVE,
+                                        (aimStartX + dx).coerceIn(0f, (targetWidth - 1).toFloat()),
+                                        (aimStartY + dy).coerceIn(0f, (targetHeight - 1).toFloat()))
+                                }
+                                true
+                            }
+                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                val dx = (event.rawX - aimDownX) * targetWidth / layer.width.coerceAtLeast(1)
+                                val dy = (event.rawY - aimDownY) * targetHeight / layer.height.coerceAtLeast(1)
+                                injectTouch(MotionEvent.ACTION_UP,
+                                    (aimStartX + if (key == "S1" || key == "S2" || key == "S3") dx else 0f).coerceIn(0f, (targetWidth - 1).toFloat()),
+                                    (aimStartY + if (key == "S1" || key == "S2" || key == "S3") dy else 0f).coerceIn(0f, (targetHeight - 1).toFloat()))
+                                view.scaleX = 1f; view.scaleY = 1f
+                                true
+                            }
                             else -> true
                         }
                     }
@@ -8011,24 +8042,27 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         val specs = listOf(
             Triple("FIRE ALL", "❄", Color.rgb(90,180,229)), Triple("REGEN", "✚", Color.rgb(108,224,108)),
             Triple("FLICKER", "⚡", Color.rgb(255,204,0)), Triple("BUFF", "◆", Color.rgb(102,179,255)),
-            Triple("CC", "✦", Color.rgb(163,102,255)), Triple("CONCEAL", "◉", Color.rgb(77,255,234)),
-            Triple("ULT", "⚔", Color.rgb(77,140,255)), Triple("ATTACK", "⚔", Color.rgb(153,204,255))
+            Triple("S1", "▲", Color.rgb(255,157,0)), Triple("S2", "◆", Color.rgb(0,229,255)),
+            Triple("S3", "✦", Color.rgb(196,110,255)), Triple("CC", "✦", Color.rgb(163,102,255)),
+            Triple("CONCEAL", "◉", Color.rgb(77,255,234)), Triple("ATTACK", "⚔", Color.rgb(153,204,255))
         )
         overlay.post {
             if (overlay.width <= 0 || overlay.height <= 0) return@post
             specs.forEach { spec ->
                 val key = spec.first
                 val prefKey = key.replace(" ", "_")
-                val size = dp(if (key == "ULT" || key == "ATTACK") 76 else 56)
+                val size = dp(when (key) { "S3", "ATTACK" -> 80; "S1", "S2" -> 60; else -> 52 })
                 val defaults = when (key) {
                     "FIRE ALL" -> .55f to .86f
                     "REGEN" -> .68f to .86f
                     "FLICKER" -> .80f to .86f
                     "BUFF" -> .90f to .84f
-                    "CC" -> .73f to .58f
-                    "CONCEAL" -> .92f to .58f
-                    "ULT" -> .82f to .78f
-                    else -> .96f to .90f
+                    "S1" -> .55f to .72f
+                    "S2" -> .72f to .62f
+                    "S3" -> .84f to .80f
+                    "CC" -> .72f to .42f
+                    "CONCEAL" -> .91f to .43f
+                    else -> .94f to .88f
                 }
                 val defaultX = defaults.first
                 val defaultY = defaults.second
