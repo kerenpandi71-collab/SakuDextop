@@ -3291,12 +3291,6 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         }
         assistantBubbleParams = bubbleParams
         assistantBubble = assistant
-        runCatching { windowManager?.addView(assistant, bubbleParams) }
-            .onFailure {
-                assistantBubble = null
-                assistantBubbleParams = null
-                Log.e(logTag, "unable to attach touchable assistant bubble", it)
-            }
         surface.post { surface.requestFocus() }
         controls.bringToFront()
         val params = WindowManager.LayoutParams(
@@ -3330,6 +3324,13 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         menuScrim = scrim
         performanceHud = hud
         windowManager?.addView(frame, params)
+        // Add the touchable bubble after the full-screen host so the host cannot cover it.
+        runCatching { windowManager?.addView(assistant, bubbleParams) }
+            .onFailure {
+                assistantBubble = null
+                assistantBubbleParams = null
+                Log.e(logTag, "unable to attach touchable assistant bubble", it)
+            }
         frame.post {
             refreshFoldingApiState("window_added", force = true)
             OperationLog.i(
