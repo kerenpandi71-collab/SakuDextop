@@ -4058,7 +4058,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                     .setDuration(360L)
                     .start()
             }
-            cursorView?.contentHeightFraction = desktopPaneFraction()
+            cursorView?.contentHeightFraction = if (isLandscapeGamepadHost()) 1f else desktopPaneFraction()
             menuScrim?.bringToFront()
             menu?.bringToFront()
             performanceHud?.bringToFront()
