@@ -432,6 +432,8 @@ internal class GamepadStickView(
     private val knobPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var xValue = 0f
     private var yValue = 0f
+    private var filteredX = 0f
+    private var filteredY = 0f
     private var activePointerId = MotionEvent.INVALID_POINTER_ID
     private var downX = 0f
     private var downY = 0f
@@ -505,6 +507,8 @@ internal class GamepadStickView(
                 activePointerId = MotionEvent.INVALID_POINTER_ID
                 xValue = 0f
                 yValue = 0f
+                filteredX = 0f
+                filteredY = 0f
                 onRelease()
                 invalidate()
                 if (event.actionMasked == MotionEvent.ACTION_UP && !movedBeyondTapSlop) performClick()
@@ -530,9 +534,13 @@ internal class GamepadStickView(
             nextX = 0f
             nextY = 0f
         }
-        xValue = nextX
-        yValue = nextY
-        onChange(nextX, nextY)
+        // Smooth tiny touch fluctuations without making the stick feel sluggish.
+        val smoothing = if (movedBeyondTapSlop) .42f else .58f
+        filteredX += (nextX - filteredX) * smoothing
+        filteredY += (nextY - filteredY) * smoothing
+        xValue = filteredX
+        yValue = filteredY
+        onChange(filteredX, filteredY)
         invalidate()
     }
 }
