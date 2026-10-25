@@ -1041,6 +1041,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
     private var demoInfoView: TextView? = null
     private var performanceHud: PerformanceHud? = null
     private var assistantBubble: TextView? = null
+    private var assistantBubbleParams: WindowManager.LayoutParams? = null
     private var laptopContent: LinearLayout? = null
     private var laptopDeck: View? = null
     private var laptopLandscapeAnalogDeck: View? = null
