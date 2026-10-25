@@ -27,8 +27,11 @@ class ArmProtonTest(unittest.TestCase):
 
     def setUp(self):
         self.arm = importlib.machinery.SourceFileLoader('arm_proton', str(RESOURCES / 'dextop-proton-arm64')).load_module()
-        self.compat = importlib.machinery.SourceFileLoader('arm_compat', str(RESOURCES / 'droiddeck/linuxfs/usr/local/bin/steam-compatibility')).load_module()
+        compat_path = RESOURCES / 'droiddeck/linuxfs/usr/local/bin/steam-compatibility'
+        self.compat = importlib.machinery.SourceFileLoader('arm_compat', str(compat_path)).load_module() if compat_path.is_file() else None
 
+    @unittest.skipUnless((RESOURCES / 'droiddeck/linuxfs/usr/local/bin/steam-compatibility').is_file(),
+                         'Upstream DroidDeck steam-compatibility payload is not present in this checkout')
     def test_native_environment_preserves_x86_prefix_and_clears_linux_emulator(self):
         with tempfile.TemporaryDirectory() as tmp:
             original = Path(tmp) / '774171'
@@ -52,6 +55,8 @@ class ArmProtonTest(unittest.TestCase):
             self.assertEqual(env['DISPLAY'], ':10')
             self.assertEqual(source['FEX_ROOTFS'], '/old-rootfs')
 
+    @unittest.skipUnless((RESOURCES / 'droiddeck/linuxfs/usr/local/bin/steam-compatibility').is_file(),
+                         'Upstream DroidDeck steam-compatibility payload is not present in this checkout')
     def test_fresh_install_persists_arm_default_before_first_steam_launch(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.arm.STEAM = Path(tmp) / 'Steam'
@@ -70,6 +75,8 @@ class ArmProtonTest(unittest.TestCase):
                 self.arm.register()
                 self.assertEqual(config.read_bytes(), initial)
 
+    @unittest.skipUnless((RESOURCES / 'droiddeck/linuxfs/usr/local/bin/steam-compatibility').is_file(),
+                         'Upstream DroidDeck steam-compatibility payload is not present in this checkout')
     def test_register_migrates_old_default_and_keeps_both_tools_reproducible(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.arm.STEAM = Path(tmp)
