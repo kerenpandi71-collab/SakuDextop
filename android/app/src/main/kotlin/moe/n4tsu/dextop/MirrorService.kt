@@ -3773,59 +3773,44 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
     }
 
     private fun buildLandscapeActionDeck(content: LinearLayout, palette: LaptopPalette) {
-        val title = TextView(this).apply {
-            text = "SAKU MOBA"
-            gravity = Gravity.CENTER
-            typeface = laptopTypeface
-            textSize = 10f
-            letterSpacing = .08f
-            setTextColor(palette.text)
-            setPadding(0, 0, 0, dp(3))
-        }
-        content.addView(title, LinearLayout.LayoutParams(-1, dp(22)))
-        val body = FrameLayout(this).apply { setBackgroundColor(Color.TRANSPARENT) }
-        val skillLayer = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
-        body.addView(skillLayer, FrameLayout.LayoutParams(-1, -1))
-        skillLayer.post {
-            if (skillLayer.width <= 0 || skillLayer.height <= 0) return@post
-            val s1 = dp(70)
-            val s2 = dp(70)
-            val ult = dp(90)
-            fun skill(label: String, icon: String, size: Int, color: Int, key: String, left: Int, bottom: Int) {
-                val circle = TextView(this).apply {
-                    text = "$icon\n$label"
-                    gravity = Gravity.CENTER
-                    setTextColor(color)
-                    textSize = if (label == "S3") 10f else 9f
-                    typeface = Typeface.create(laptopTypeface, Typeface.BOLD)
-                    background = GradientDrawable().apply {
-                        shape = GradientDrawable.OVAL
-                        setColor(Color.argb(150, 16, 32, 58))
-                        setStroke(dp(2), Color.argb(170, 100, 200, 255))
-                    }
-                    elevation = dp(5).toFloat()
-                    contentDescription = "Mapping trigger $label"
-                    setOnTouchListener { _, event ->
-                        val prefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
-                        val defaultX = if (key == "S1") .50f else if (key == "S2") .70f else .84f
-                        val defaultY = if (key == "S1") .88f else if (key == "S2") .72f else .84f
-                        val nx = prefs.getFloat("${key}_x", defaultX)
-                        val ny = prefs.getFloat("${key}_y", defaultY)
+        content.addView(TextView(this).apply { text = "SAKU MOBA"; gravity = Gravity.CENTER; setTextColor(palette.text); textSize = 10f }, LinearLayout.LayoutParams(-1, dp(22)))
+        val body = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
+        val layer = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
+        body.addView(layer, FrameLayout.LayoutParams(-1, -1))
+        layer.post {
+            if (layer.width <= 0 || layer.height <= 0) return@post
+            val prefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
+            val specs = listOf(
+                arrayOf("FIRE ALL", "❄", "90,180,229"), arrayOf("REGEN", "✚", "108,224,108"),
+                arrayOf("FLICKER", "⚡", "255,204,0"), arrayOf("BUFF", "◆", "102,179,255"),
+                arrayOf("CC", "✦", "163,102,255"), arrayOf("CONCEAL", "◉", "77,255,234"),
+                arrayOf("ULT", "⚔", "77,140,255"), arrayOf("ATTACK", "⚔", "153,204,255")
+            )
+            specs.forEach { spec ->
+                val label = spec[0]; val icon = spec[1]; val rgb = spec[2].split(",").map { it.toInt() }
+                val color = Color.rgb(rgb[0], rgb[1], rgb[2]); val key = label.replace(" ", "_")
+                val default = when (label) { "FIRE ALL" -> .55f to .86f; "REGEN" -> .68f to .86f; "FLICKER" -> .80f to .86f; "BUFF" -> .90f to .84f; "CC" -> .73f to .58f; "CONCEAL" -> .92f to .58f; "ULT" -> .82f to .78f; else -> .96f to .90f }
+                val size = dp(if (label == "ULT") 70 else if (label == "ATTACK") 82 else 50)
+                val button = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(2), dp(2), dp(2), dp(2))
+                    background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.argb(218, 13, 30, 49)); setStroke(dp(if (label == "ULT") 3 else 2), color) }
+                    elevation = dp(5).toFloat(); rotation = prefs.getFloat(key + "_rotation", if (label == "ATTACK") 45f else 0f)
+                    addView(TextView(this@MirrorService).apply { text = icon; gravity = Gravity.CENTER; setTextColor(color); textSize = if (label == "ULT" || label == "ATTACK") 27f else 20f; typeface = Typeface.DEFAULT_BOLD; setShadowLayer(dp(7).toFloat(), 0f, 0f, color) }, LinearLayout.LayoutParams(-1, 0, 1f))
+                    if (label != "ATTACK") addView(TextView(this@MirrorService).apply { text = label; gravity = Gravity.CENTER; setTextColor(Color.WHITE); textSize = 7f; typeface = Typeface.DEFAULT_BOLD; maxLines = 1 }, LinearLayout.LayoutParams(-1, dp(12)))
+                    var pressed = false
+                    setOnTouchListener { view, event ->
+                        val nx = prefs.getFloat(key + "_x", default.first); val ny = prefs.getFloat(key + "_y", default.second)
                         when (event.actionMasked) {
-                            MotionEvent.ACTION_DOWN -> { injectTouch(MotionEvent.ACTION_DOWN, nx * (targetWidth - 1), ny * (targetHeight - 1)); true }
-                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { injectTouch(MotionEvent.ACTION_UP, nx * (targetWidth - 1), ny * (targetHeight - 1)); true }
+                            MotionEvent.ACTION_DOWN -> { pressed = true; view.scaleX = .95f; view.scaleY = .95f; injectTouch(MotionEvent.ACTION_DOWN, nx * (targetWidth - 1), ny * (targetHeight - 1)); true }
+                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { if (pressed) { pressed = false; injectTouch(MotionEvent.ACTION_UP, nx * (targetWidth - 1), ny * (targetHeight - 1)) }; view.scaleX = 1f; view.scaleY = 1f; true }
                             else -> true
                         }
                     }
                 }
-                skillLayer.addView(circle, FrameLayout.LayoutParams(size, size, Gravity.BOTTOM or Gravity.START).apply {
-                    leftMargin = left
-                    bottomMargin = bottom
-                })
+                val x = (prefs.getFloat(key + "_x", default.first) * layer.width).roundToInt() - size / 2
+                val y = (prefs.getFloat(key + "_y", default.second) * layer.height).roundToInt() - size / 2
+                layer.addView(button, FrameLayout.LayoutParams(size, size).apply { leftMargin = x.coerceIn(0, (layer.width-size).coerceAtLeast(0)); topMargin = y.coerceIn(0, (layer.height-size).coerceAtLeast(0)) })
             }
-            skill("S1", "▲", s1, Color.rgb(255,157,0), "S1", skillLayer.width / 5, dp(10))
-            skill("S2", "◆", s2, Color.rgb(0,229,255), "S2", skillLayer.width * 3 / 5, skillLayer.height / 4)
-            skill("S3", "✦", ult, Color.rgb(196,110,255), "S3", skillLayer.width - ult - dp(6), dp(28))
         }
         content.addView(body, LinearLayout.LayoutParams(-1, 0, 1f))
     }
