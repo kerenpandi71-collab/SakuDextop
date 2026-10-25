@@ -1040,6 +1040,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
     private var demoMode = false
     private var demoInfoView: TextView? = null
     private var performanceHud: PerformanceHud? = null
+    private var assistantBubble: TextView? = null
     private var laptopContent: LinearLayout? = null
     private var laptopDeck: View? = null
     private var laptopLandscapeAnalogDeck: View? = null
@@ -1408,8 +1409,9 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             }
 
             override fun onThreeFingerGesture() {
-                OperationLog.i(this@MirrorService, "PrivilegedInput", "three-finger action")
-                performConfiguredGesture()
+                // The floating assistant bubble is now the single entry point
+                // for the Dextop menu. Ignore the legacy three-finger shortcut.
+                OperationLog.i(this@MirrorService, "PrivilegedInput", "legacy three-finger menu gesture ignored; use assistant bubble")
             }
 
             override fun onHaptic(strong: Boolean) {
@@ -3209,6 +3211,67 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 rightMargin = dp(18)
             }
         )
+        val assistant = TextView(this).apply {
+            text = "✦"
+            gravity = Gravity.CENTER
+            textSize = 24f
+            setTextColor(Color.WHITE)
+            elevation = dp(12).toFloat()
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.rgb(35, 112, 235))
+                setStroke(dp(2), Color.argb(220, 255, 255, 255))
+            }
+            contentDescription = "Buka menu Dextop"
+            isClickable = true
+            isFocusable = true
+            setOnTouchListener { view, event ->
+                val params = view.layoutParams as? FrameLayout.LayoutParams
+                    ?: return@setOnTouchListener false
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        view.setTag(R.id.assistant_bubble_touch_x, event.rawX)
+                        view.setTag(R.id.assistant_bubble_touch_y, event.rawY)
+                        view.setTag(R.id.assistant_bubble_start_x, params.rightMargin)
+                        view.setTag(R.id.assistant_bubble_start_y, params.topMargin)
+                        view.setTag(R.id.assistant_bubble_dragged, false)
+                        true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val startX = (view.getTag(R.id.assistant_bubble_touch_x) as? Float) ?: event.rawX
+                        val startY = (view.getTag(R.id.assistant_bubble_touch_y) as? Float) ?: event.rawY
+                        val dx = event.rawX - startX
+                        val dy = event.rawY - startY
+                        if (kotlin.math.abs(dx) > dp(5) || kotlin.math.abs(dy) > dp(5)) {
+                            view.setTag(R.id.assistant_bubble_dragged, true)
+                        }
+                        if (view.getTag(R.id.assistant_bubble_dragged) == true) {
+                            val startRight = (view.getTag(R.id.assistant_bubble_start_x) as? Int) ?: dp(8)
+                            val startTop = (view.getTag(R.id.assistant_bubble_start_y) as? Int) ?: 0
+                            params.rightMargin = (startRight - dx.toInt()).coerceAtLeast(0)
+                            params.topMargin = (startTop + dy.toInt()).coerceAtLeast(0)
+                            params.gravity = Gravity.TOP or Gravity.END
+                            view.layoutParams = params
+                        }
+                        true
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        if (view.getTag(R.id.assistant_bubble_dragged) != true) toggleMenu()
+                        true
+                    }
+                    MotionEvent.ACTION_CANCEL -> true
+                    else -> true
+                }
+            }
+        }
+        val assistantSize = dp(52)
+        frame.addView(
+            assistant,
+            FrameLayout.LayoutParams(assistantSize, assistantSize, Gravity.END or Gravity.CENTER_VERTICAL).apply {
+                rightMargin = dp(8)
+            }
+        )
+        assistantBubble = assistant
         surface.post { surface.requestFocus() }
         controls.bringToFront()
         val params = WindowManager.LayoutParams(
@@ -9988,7 +10051,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         }
         val nativeTouchpadAvailable = useVirtualMouse &&
                 virtualPointerRegisteredProfile == "touchpad"
-        if (experimentalMultiTouch && !nativeTouchpadAvailable && !imeDirectTouch &&
+        if (false && experimentalMultiTouch && !nativeTouchpadAvailable && !imeDirectTouch &&
             handleExperimentalEdgeGesture(event)
         ) {
             if (nativeTouchpadGestureActive || virtualTouchpadActiveContactCount() > 0) {
@@ -13561,6 +13624,8 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         menu = null
         menuScrim = null
         performanceHud = null
+        assistantBubble = null
+        laptopLandscapeAnalogDeck = null
         laptopDeck = null
         laptopDeckContent = null
         demoInfoView = null
