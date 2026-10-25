@@ -3739,6 +3739,8 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         setBackgroundColor(Color.TRANSPARENT)
         isClickable = true
         setOnTouchListener { _, _ -> true }
+        var smoothAxisX = 0f
+        var smoothAxisY = 0f
         fun stick(label: String, axisX: Int, axisY: Int): View {
             val group = LinearLayout(this@MirrorService).apply {
                 orientation = LinearLayout.VERTICAL
@@ -3748,10 +3750,16 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                     GamepadStickView(
                         this@MirrorService,
                         onChange = { x, y ->
-                            injectVirtualGamepadAxis(axisX, (x * 32767f).roundToInt())
-                            injectVirtualGamepadAxis(axisY, (y * 32767f).roundToInt())
+                            val rawX = if (kotlin.math.abs(x) < .055f) 0f else x
+                            val rawY = if (kotlin.math.abs(y) < .055f) 0f else y
+                            smoothAxisX = smoothAxisX * .42f + rawX * .58f
+                            smoothAxisY = smoothAxisY * .42f + rawY * .58f
+                            injectVirtualGamepadAxis(axisX, (smoothAxisX.coerceIn(-1f, 1f) * 32767f).roundToInt())
+                            injectVirtualGamepadAxis(axisY, (smoothAxisY.coerceIn(-1f, 1f) * 32767f).roundToInt())
                         },
                         onRelease = {
+                            smoothAxisX = 0f
+                            smoothAxisY = 0f
                             injectVirtualGamepadAxis(axisX, 0)
                             injectVirtualGamepadAxis(axisY, 0)
                         },
@@ -3773,43 +3781,74 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
     }
 
     private fun buildLandscapeActionDeck(content: LinearLayout, palette: LaptopPalette) {
-        content.addView(TextView(this).apply { text = "SAKU MOBA"; gravity = Gravity.CENTER; setTextColor(palette.text); textSize = 10f }, LinearLayout.LayoutParams(-1, dp(22)))
+        content.addView(TextView(this).apply {
+            text = "SAKU MOBA"; gravity = Gravity.CENTER; setTextColor(palette.text); textSize = 10f
+        }, LinearLayout.LayoutParams(-1, dp(22)))
         val body = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
         val layer = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
         body.addView(layer, FrameLayout.LayoutParams(-1, -1))
         layer.post {
             if (layer.width <= 0 || layer.height <= 0) return@post
             val prefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
+            data class SkillSpec(val label: String, val icon: String, val color: Int, val sizeDp: Int, val x: Float, val y: Float)
             val specs = listOf(
-                arrayOf("FIRE ALL", "❄", "90,180,229"), arrayOf("REGEN", "✚", "108,224,108"),
-                arrayOf("FLICKER", "⚡", "255,204,0"), arrayOf("BUFF", "◆", "102,179,255"),
-                arrayOf("CC", "✦", "163,102,255"), arrayOf("CONCEAL", "◉", "77,255,234"),
-                arrayOf("ULT", "⚔", "77,140,255"), arrayOf("ATTACK", "⚔", "153,204,255")
+                SkillSpec("FIRE ALL", "❄", Color.rgb(90,180,229), 55, .204f, .83f),
+                SkillSpec("REGEN", "✚", Color.rgb(108,224,108), 55, .375f, .83f),
+                SkillSpec("FLICKER", "⚡", Color.rgb(255,204,0), 55, .546f, .83f),
+                SkillSpec("BUFF", "💧", Color.rgb(102,179,255), 65, .730f, .81f),
+                SkillSpec("CC", "✦", Color.rgb(163,102,255), 55, .651f, .49f),
+                SkillSpec("CONCEAL", "◉", Color.rgb(77,255,234), 60, .868f, .50f),
+                SkillSpec("ULT", "⚔", Color.rgb(77,140,255), 85, .730f, .81f),
+                SkillSpec("ATTACK", "⚔", Color.rgb(153,204,255), 110, .934f, .74f)
             )
             specs.forEach { spec ->
-                val label = spec[0]; val icon = spec[1]; val rgb = spec[2].split(",").map { it.toInt() }
-                val color = Color.rgb(rgb[0], rgb[1], rgb[2]); val key = label.replace(" ", "_")
-                val default = when (label) { "FIRE ALL" -> .55f to .86f; "REGEN" -> .68f to .86f; "FLICKER" -> .80f to .86f; "BUFF" -> .90f to .84f; "CC" -> .73f to .58f; "CONCEAL" -> .92f to .58f; "ULT" -> .82f to .78f; else -> .96f to .90f }
-                val size = dp(if (label == "ULT") 70 else if (label == "ATTACK") 82 else 50)
-                val button = LinearLayout(this).apply {
-                    orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(2), dp(2), dp(2), dp(2))
-                    background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.argb(218, 13, 30, 49)); setStroke(dp(if (label == "ULT") 3 else 2), color) }
-                    elevation = dp(5).toFloat(); rotation = prefs.getFloat(key + "_rotation", if (label == "ATTACK") 45f else 0f)
-                    addView(TextView(this@MirrorService).apply { text = icon; gravity = Gravity.CENTER; setTextColor(color); textSize = if (label == "ULT" || label == "ATTACK") 27f else 20f; typeface = Typeface.DEFAULT_BOLD; setShadowLayer(dp(7).toFloat(), 0f, 0f, color) }, LinearLayout.LayoutParams(-1, 0, 1f))
-                    if (label != "ATTACK") addView(TextView(this@MirrorService).apply { text = label; gravity = Gravity.CENTER; setTextColor(Color.WHITE); textSize = 7f; typeface = Typeface.DEFAULT_BOLD; maxLines = 1 }, LinearLayout.LayoutParams(-1, dp(12)))
-                    var pressed = false
+                val key = spec.label.replace(" ", "_")
+                val size = dp(spec.sizeDp)
+                val px = prefs.getFloat("${key}_x", spec.x)
+                val py = prefs.getFloat("${key}_y", spec.y)
+                val angle = prefs.getFloat("${key}_rotation", if (key == "ATTACK") 45f else 0f)
+                val holder = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
+                val circle = TextView(this).apply {
+                    gravity = Gravity.CENTER
+                    text = spec.icon
+                    textSize = if (key == "ATTACK") 39f else if (key == "ULT") 30f else 23f
+                    typeface = Typeface.DEFAULT_BOLD
+                    setTextColor(spec.color)
+                    setShadowLayer(dp(8).toFloat(), 0f, 0f, spec.color)
+                    background = GradientDrawable(
+                        GradientDrawable.Orientation.TL_BR,
+                        intArrayOf(
+                            Color.argb(230, (Color.red(spec.color) * .42f).toInt(), (Color.green(spec.color) * .42f).toInt(), (Color.blue(spec.color) * .42f).toInt()),
+                            Color.argb(238, 10, 20, 36)
+                        )
+                    ).apply {
+                        shape = GradientDrawable.OVAL
+                        setStroke(dp(if (key == "ULT") 3 else 2), Color.argb(220, Color.red(spec.color), Color.green(spec.color), Color.blue(spec.color)))
+                    }
+                    elevation = dp(5).toFloat()
+                    rotation = angle
                     setOnTouchListener { view, event ->
-                        val nx = prefs.getFloat(key + "_x", default.first); val ny = prefs.getFloat(key + "_y", default.second)
+                        val nx = prefs.getFloat("${key}_x", spec.x)
+                        val ny = prefs.getFloat("${key}_y", spec.y)
                         when (event.actionMasked) {
-                            MotionEvent.ACTION_DOWN -> { pressed = true; view.scaleX = .95f; view.scaleY = .95f; injectTouch(MotionEvent.ACTION_DOWN, nx * (targetWidth - 1), ny * (targetHeight - 1)); true }
-                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { if (pressed) { pressed = false; injectTouch(MotionEvent.ACTION_UP, nx * (targetWidth - 1), ny * (targetHeight - 1)) }; view.scaleX = 1f; view.scaleY = 1f; true }
+                            MotionEvent.ACTION_DOWN -> { view.scaleX = .95f; view.scaleY = .95f; injectTouch(MotionEvent.ACTION_DOWN, nx * (targetWidth - 1), ny * (targetHeight - 1)); true }
+                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { injectTouch(MotionEvent.ACTION_UP, nx * (targetWidth - 1), ny * (targetHeight - 1)); view.scaleX = 1f; view.scaleY = 1f; true }
                             else -> true
                         }
                     }
                 }
-                val x = (prefs.getFloat(key + "_x", default.first) * layer.width).roundToInt() - size / 2
-                val y = (prefs.getFloat(key + "_y", default.second) * layer.height).roundToInt() - size / 2
-                layer.addView(button, FrameLayout.LayoutParams(size, size).apply { leftMargin = x.coerceIn(0, (layer.width-size).coerceAtLeast(0)); topMargin = y.coerceIn(0, (layer.height-size).coerceAtLeast(0)) })
+                holder.addView(circle, FrameLayout.LayoutParams(size, size, Gravity.TOP or Gravity.CENTER_HORIZONTAL))
+                if (key != "ATTACK") holder.addView(TextView(this).apply {
+                    text = spec.label; gravity = Gravity.CENTER; setTextColor(Color.WHITE); textSize = 9f
+                    typeface = Typeface.DEFAULT_BOLD; setShadowLayer(dp(2).toFloat(), 1f, 1f, Color.BLACK)
+                }, FrameLayout.LayoutParams(-2, dp(16), Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { topMargin = size - dp(1) })
+                val holderHeight = size + if (key == "ATTACK") 0 else dp(16)
+                val x = (px * layer.width).roundToInt() - size / 2
+                val y = (py * layer.height).roundToInt() - size / 2
+                layer.addView(holder, FrameLayout.LayoutParams(size, holderHeight).apply {
+                    leftMargin = x.coerceIn(0, (layer.width-size).coerceAtLeast(0))
+                    topMargin = y.coerceIn(0, (layer.height-holderHeight).coerceAtLeast(0))
+                })
             }
         }
         content.addView(body, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -7960,7 +7999,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         toolbar.addView(TextView(this).apply {
             text = "RESET"; setTextColor(Color.rgb(255,190,95)); textSize = 10f; gravity = Gravity.CENTER
             setOnClickListener {
-                prefs.edit().remove("S1_x").remove("S1_y").remove("S2_x").remove("S2_y").remove("S3_x").remove("S3_y").apply()
+                prefs.edit().clear().apply()
                 showVisualMappingEditor()
             }
         }, LinearLayout.LayoutParams(dp(58), dp(38)))
@@ -7993,25 +8032,38 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 }
                 val defaultX = defaults.first
                 val defaultY = defaults.second
-                val x = (prefs.getFloat("${prefKey}_x", defaultX) * overlay.width).roundToInt().coerceIn(0, (overlay.width-size).coerceAtLeast(0))
-                val y = (prefs.getFloat("${prefKey}_y", defaultY) * overlay.height).roundToInt().coerceIn(dp(48), (overlay.height-size).coerceAtLeast(dp(48)))
+                val x = (prefs.getFloat("${prefKey}_x", defaultX) * overlay.width - size / 2f).roundToInt().coerceIn(0, (overlay.width-size).coerceAtLeast(0))
+                val y = (prefs.getFloat("${prefKey}_y", defaultY) * overlay.height - size / 2f).roundToInt().coerceIn(dp(48), (overlay.height-size).coerceAtLeast(dp(48)))
                 val trigger = TextView(this).apply {
                     text = "${spec.second}\n$key"; gravity = Gravity.CENTER; textSize = 11f; typeface = Typeface.DEFAULT_BOLD; setTextColor(spec.third)
                     background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.argb(210,16,32,58)); setStroke(dp(2), spec.third) }
                     elevation = dp(8).toFloat()
-                    var downX = 0f; var downY = 0f; var startX = x; var startY = y
+                    var downX = 0f; var downY = 0f; var startX = x; var startY = y; var moved = false; var lastTapAt = 0L
+                    rotation = prefs.getFloat("${prefKey}_rotation", if (key == "ATTACK") 45f else 0f)
+                    contentDescription = "Geser untuk mengatur posisi. Ketuk dua kali untuk memutar tombol."
                     setOnTouchListener { view, event ->
                         val lp = view.layoutParams as FrameLayout.LayoutParams
                         when (event.actionMasked) {
-                            MotionEvent.ACTION_DOWN -> { downX=event.rawX; downY=event.rawY; startX=lp.leftMargin; startY=lp.topMargin; true }
+                            MotionEvent.ACTION_DOWN -> { downX=event.rawX; downY=event.rawY; startX=lp.leftMargin; startY=lp.topMargin; moved=false; true }
                             MotionEvent.ACTION_MOVE -> {
-                                lp.leftMargin=(startX+event.rawX-downX).roundToInt().coerceIn(0,(overlay.width-view.width).coerceAtLeast(0))
-                                lp.topMargin=(startY+event.rawY-downY).roundToInt().coerceIn(dp(48),(overlay.height-view.height).coerceAtLeast(dp(48)))
+                                val dx = event.rawX-downX; val dy = event.rawY-downY
+                                if (kotlin.math.abs(dx) > dp(4) || kotlin.math.abs(dy) > dp(4)) moved=true
+                                lp.leftMargin=(startX+dx).roundToInt().coerceIn(0,(overlay.width-view.width).coerceAtLeast(0))
+                                lp.topMargin=(startY+dy).roundToInt().coerceIn(dp(48),(overlay.height-view.height).coerceAtLeast(dp(48)))
                                 view.layoutParams=lp; true
                             }
                             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                                prefs.edit().putFloat("${prefKey}_x",(lp.leftMargin.toFloat()/overlay.width.coerceAtLeast(1)).coerceIn(0f,1f))
-                                    .putFloat("${prefKey}_y",(lp.topMargin.toFloat()/overlay.height.coerceAtLeast(1)).coerceIn(0f,1f)).apply()
+                                if (!moved && event.actionMasked == MotionEvent.ACTION_UP) {
+                                    val now = SystemClock.uptimeMillis()
+                                    if (now - lastTapAt < 350L) {
+                                        val nextRotation = (prefs.getFloat("${prefKey}_rotation", if (key == "ATTACK") 45f else 0f) + 15f) % 360f
+                                        prefs.edit().putFloat("${prefKey}_rotation", nextRotation).apply()
+                                        view.rotation = nextRotation
+                                        lastTapAt = 0L
+                                    } else lastTapAt = now
+                                }
+                                prefs.edit().putFloat("${prefKey}_x",((lp.leftMargin + view.width / 2f)/overlay.width.coerceAtLeast(1)).coerceIn(0f,1f))
+                                    .putFloat("${prefKey}_y",((lp.topMargin + view.height / 2f)/overlay.height.coerceAtLeast(1)).coerceIn(0f,1f)).apply()
                                 true
                             }
                             else -> true
