@@ -4049,7 +4049,8 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 alpha = 0f
                 translationY = dp(28).toFloat()
             }
-            content.addView(deck, LinearLayout.LayoutParams(-1, 0, keyboardDeckWeight()))
+            content.addView(deck, laptopDeckLayoutParams())
+            updateLaptopHostLayout()
             deck.post {
                 deck.animate()
                     .alpha(1f)
@@ -4064,6 +4065,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             performanceHud?.bringToFront()
         } else {
             restoreDextopSwipeIme()
+            updateLaptopHostLayout(forceStandard = true)
             // Style is disabled from inside the visible operation overlay.
             // Routing directly to the desktop here bypasses that still-open
             // overlay (including its close button and edge recognizer), which
@@ -4120,6 +4122,35 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         syncCoverInputForKeyboardStyle()
     }
 
+    private fun isLandscapeGamepadHost(): Boolean =
+        laptopModeActive &&
+            keyboardDeckStyle == KeyboardDeckStyle.GAMEPAD &&
+            resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    private fun laptopDeckLayoutParams(): LinearLayout.LayoutParams =
+        if (isLandscapeGamepadHost()) {
+            LinearLayout.LayoutParams(0, -1, 1f)
+        } else {
+            LinearLayout.LayoutParams(-1, 0, keyboardDeckWeight())
+        }
+
+    private fun updateLaptopHostLayout(forceStandard: Boolean = false) {
+        val content = laptopContent ?: return
+        val surface = surfaceView ?: return
+        val horizontal = !forceStandard && isLandscapeGamepadHost()
+        content.orientation = if (horizontal) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+        val params = surface.layoutParams as? LinearLayout.LayoutParams
+        if (params != null) {
+            params.width = if (horizontal) 0 else -1
+            params.height = if (horizontal) -1 else 0
+            params.weight = if (horizontal) 1.5f else 1f
+            surface.layoutParams = params
+        }
+        laptopDeck?.let { it.layoutParams = laptopDeckLayoutParams() }
+        content.requestLayout()
+        surface.requestLayout()
+    }
+
     private fun switchActiveKeyboardStyle(style: KeyboardDeckStyle) {
         if (!laptopModeActive || keyboardDeckStyle == style) return
         val content = laptopContent ?: return
@@ -4143,8 +4174,9 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             alpha = 0f
             translationY = dp(20).toFloat()
         }
-        content.addView(deck, LinearLayout.LayoutParams(-1, 0, keyboardDeckWeight()))
-        cursorView?.contentHeightFraction = desktopPaneFraction()
+        content.addView(deck, laptopDeckLayoutParams())
+        updateLaptopHostLayout()
+        cursorView?.contentHeightFraction = if (isLandscapeGamepadHost()) 1f else desktopPaneFraction()
         deck.animate()
             .alpha(1f)
             .translationY(0f)
@@ -5542,12 +5574,20 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 )
                 return@postDelayed
             }
-            val expectedHeight = if (enabled) {
+            val landscapeGamepadHost = enabled && isLandscapeGamepadHost()
+            val expectedWidth = if (landscapeGamepadHost) {
+                (content.width * 1.5f / 2.5f).toInt()
+            } else content.width
+            val expectedHeight = if (enabled && !landscapeGamepadHost) {
                 (content.height * desktopPaneFraction()).toInt()
             } else content.height
-            if ((surface.width <= 0 || kotlin.math.abs(surface.height - expectedHeight) > 2) &&
-                attempt < 20
-            ) {
+            val mismatch = if (landscapeGamepadHost) {
+                surface.width <= 0 || kotlin.math.abs(surface.width - expectedWidth) > 3 ||
+                    kotlin.math.abs(surface.height - expectedHeight) > 3
+            } else {
+                surface.width <= 0 || kotlin.math.abs(surface.height - expectedHeight) > 2
+            }
+            if (mismatch && attempt < 20) {
                 applyLaptopGeometryWhenLaidOut(enabled, attempt + 1, baseOverride, preserveMenu)
                 return@postDelayed
             }
