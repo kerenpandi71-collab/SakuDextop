@@ -74,10 +74,14 @@ internal class XboxGamepadView(
         fun x(v: Float) = ox + v * unit
         fun y(v: Float) = oy + v * unit
         fun center(c: Control, px: Float, py: Float) { centers[c] = x(px) to y(py) }
-        center(Control.LEFT_STICK, 25f, 25f); center(Control.DPAD, 36f, 46f)
-        center(Control.RIGHT_STICK, 63f, 47f); center(Control.Y, 79f, 20f)
-        center(Control.X, 73f, 27f); center(Control.B, 85f, 27f); center(Control.A, 79f, 34f)
-        center(Control.HOME, 50f, 15f); center(Control.VIEW, 44f, 28f); center(Control.MENU, 56f, 28f)
+        // Split the controller into two clear zones: game buttons on the
+        // left and both analog sticks on the right. This keeps the controls
+        // usable when the controller deck sits beside the mirrored game.
+        center(Control.DPAD, 24f, 43f)
+        center(Control.Y, 19f, 20f); center(Control.X, 11f, 28f)
+        center(Control.B, 27f, 28f); center(Control.A, 19f, 36f)
+        center(Control.LEFT_STICK, 69f, 25f); center(Control.RIGHT_STICK, 69f, 48f)
+        center(Control.HOME, 50f, 15f); center(Control.VIEW, 43f, 20f); center(Control.MENU, 57f, 20f)
 
         val body = Path().apply {
             moveTo(x(18f), y(10f)); cubicTo(x(25f), y(5f), x(35f), y(10f), x(40f), y(12f))
