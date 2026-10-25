@@ -2650,7 +2650,13 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             densityDpi = newConfig.densityDpi
         )
         root?.postDelayed({
-            if (active) refreshPrivilegedInputConfig("configuration_changed")
+            if (active) {
+                if (laptopModeActive) {
+                    updateLaptopHostLayout()
+                    applyLaptopGeometryWhenLaidOut(true, preserveMenu = true)
+                }
+                refreshPrivilegedInputConfig("configuration_changed")
+            }
         }, 120L)
     }
 
