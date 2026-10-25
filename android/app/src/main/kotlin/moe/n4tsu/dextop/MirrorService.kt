@@ -3231,15 +3231,15 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             isClickable = true
             isFocusable = true
             setOnTouchListener { view, event ->
-                val params = view.layoutParams as? FrameLayout.LayoutParams
+                val params = assistantBubbleParams
                     ?: return@setOnTouchListener false
                 when (event.actionMasked) {
                     MotionEvent.ACTION_DOWN -> {
                         view.tag = mutableMapOf<String, Any>(
                             "downX" to event.rawX,
                             "downY" to event.rawY,
-                            "startRight" to params.rightMargin,
-                            "startTop" to view.top,
+                            "startX" to params.x,
+                            "startY" to params.y,
                             "dragged" to false,
                         )
                         true
@@ -3252,10 +3252,11 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                             state["dragged"] = true
                         }
                         if (state["dragged"] == true) {
-                            params.rightMargin = ((state["startRight"] as Int) - dx.toInt()).coerceAtLeast(0)
-                            params.topMargin = ((state["startTop"] as Int) + dy.toInt()).coerceAtLeast(0)
-                            params.gravity = Gravity.TOP or Gravity.END
-                            view.layoutParams = params
+                            val maxX = (resources.displayMetrics.widthPixels - view.width).coerceAtLeast(0)
+                            val maxY = (resources.displayMetrics.heightPixels - view.height).coerceAtLeast(0)
+                            params.x = ((state["startX"] as Int) + dx.toInt()).coerceIn(0, maxX)
+                            params.y = ((state["startY"] as Int) + dy.toInt()).coerceIn(0, maxY)
+                            runCatching { windowManager?.updateViewLayout(view, params) }
                         }
                         true
                     }
@@ -3270,13 +3271,31 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             }
         }
         val assistantSize = dp(52)
-        frame.addView(
-            assistant,
-            FrameLayout.LayoutParams(assistantSize, assistantSize, Gravity.END or Gravity.CENTER_VERTICAL).apply {
-                rightMargin = dp(8)
-            }
-        )
+        val bubbleParams = WindowManager.LayoutParams(
+            assistantSize,
+            assistantSize,
+            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = (resources.displayMetrics.widthPixels - assistantSize - dp(8)).coerceAtLeast(0)
+            y = ((resources.displayMetrics.heightPixels - assistantSize) / 2).coerceAtLeast(0)
+            layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+            fitInsetsTypes = 0
+            setFitInsetsIgnoringVisibility(true)
+            title = "Dextop assistant bubble"
+        }
+        assistantBubbleParams = bubbleParams
         assistantBubble = assistant
+        runCatching { windowManager?.addView(assistant, bubbleParams) }
+            .onFailure {
+                assistantBubble = null
+                assistantBubbleParams = null
+                Log.e(logTag, "unable to attach touchable assistant bubble", it)
+            }
         surface.post { surface.requestFocus() }
         controls.bringToFront()
         val params = WindowManager.LayoutParams(
@@ -13615,7 +13634,9 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         menu = null
         menuScrim = null
         performanceHud = null
+        assistantBubble?.let { runCatching { windowManager?.removeView(it) } }
         assistantBubble = null
+        assistantBubbleParams = null
         laptopLandscapeAnalogDeck = null
         laptopDeck = null
         laptopDeckContent = null
