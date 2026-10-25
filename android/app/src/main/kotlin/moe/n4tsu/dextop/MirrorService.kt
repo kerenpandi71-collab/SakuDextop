@@ -1042,6 +1042,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
     private var performanceHud: PerformanceHud? = null
     private var assistantBubble: TextView? = null
     private var assistantBubbleParams: WindowManager.LayoutParams? = null
+    private var visualMappingOverlay: View? = null
     private var laptopContent: LinearLayout? = null
     private var laptopDeck: View? = null
     private var laptopLandscapeAnalogDeck: View? = null
@@ -3782,45 +3783,50 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             setPadding(0, 0, 0, dp(3))
         }
         content.addView(title, LinearLayout.LayoutParams(-1, dp(22)))
-        val body = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
+        val body = FrameLayout(this).apply { setBackgroundColor(Color.TRANSPARENT) }
+        val skillLayer = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
+        body.addView(skillLayer, FrameLayout.LayoutParams(-1, -1))
+        skillLayer.post {
+            if (skillLayer.width <= 0 || skillLayer.height <= 0) return@post
+            val s1 = dp(70)
+            val s2 = dp(70)
+            val ult = dp(90)
+            fun skill(label: String, icon: String, size: Int, color: Int, key: String, left: Int, bottom: Int) {
+                val circle = TextView(this).apply {
+                    text = "$icon\n$label"
+                    gravity = Gravity.CENTER
+                    setTextColor(color)
+                    textSize = if (label == "S3") 10f else 9f
+                    typeface = Typeface.create(laptopTypeface, Typeface.BOLD)
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(Color.argb(150, 16, 32, 58))
+                        setStroke(dp(2), Color.argb(170, 100, 200, 255))
+                    }
+                    elevation = dp(5).toFloat()
+                    contentDescription = "Mapping trigger $label"
+                    setOnTouchListener { _, event ->
+                        val prefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
+                        val defaultX = if (key == "S1") .50f else if (key == "S2") .70f else .84f
+                        val defaultY = if (key == "S1") .88f else if (key == "S2") .72f else .84f
+                        val nx = prefs.getFloat("${key}_x", defaultX)
+                        val ny = prefs.getFloat("${key}_y", defaultY)
+                        when (event.actionMasked) {
+                            MotionEvent.ACTION_DOWN -> { injectTouch(MotionEvent.ACTION_DOWN, nx * (targetWidth - 1), ny * (targetHeight - 1)); true }
+                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { injectTouch(MotionEvent.ACTION_UP, nx * (targetWidth - 1), ny * (targetHeight - 1)); true }
+                            else -> true
+                        }
+                    }
+                }
+                skillLayer.addView(circle, FrameLayout.LayoutParams(size, size, Gravity.BOTTOM or Gravity.START).apply {
+                    leftMargin = left
+                    bottomMargin = bottom
+                })
+            }
+            skill("S1", "▲", s1, Color.rgb(255,157,0), "S1", skillLayer.width / 5, dp(10))
+            skill("S2", "◆", s2, Color.rgb(0,229,255), "S2", skillLayer.width * 3 / 5, skillLayer.height / 4)
+            skill("S3", "✦", ult, Color.rgb(196,110,255), "S3", skillLayer.width - ult - dp(6), dp(28))
         }
-        val topRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            addView(gamepadTrigger("BATTLE", PrivilegedInputProtocol.GAMEPAD_AXIS_TRIGGER_L, PrivilegedInputProtocol.GAMEPAD_BUTTON_L2, palette),
-                LinearLayout.LayoutParams(0, dp(38), 1f).apply { rightMargin = dp(3) })
-            addView(gamepadTrigger("ATTACK", PrivilegedInputProtocol.GAMEPAD_AXIS_TRIGGER_R, PrivilegedInputProtocol.GAMEPAD_BUTTON_R2, palette),
-                LinearLayout.LayoutParams(0, dp(38), 1f).apply { leftMargin = dp(3) })
-        }
-        body.addView(topRow, LinearLayout.LayoutParams(-1, dp(42)))
-        val skillRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            addGamepadButton(this, "SKILL 1", PrivilegedInputProtocol.GAMEPAD_BUTTON_X, palette,
-                LinearLayout.LayoutParams(0, dp(48), 1f).apply { rightMargin = dp(3) },
-                fillColor = Color.rgb(22, 55, 82), labelColor = Color.rgb(120, 205, 255))
-            addGamepadButton(this, "SKILL 2", PrivilegedInputProtocol.GAMEPAD_BUTTON_Y, palette,
-                LinearLayout.LayoutParams(0, dp(48), 1f).apply { leftMargin = dp(3); rightMargin = dp(3) },
-                fillColor = Color.rgb(22, 55, 82), labelColor = Color.rgb(120, 205, 255))
-            addGamepadButton(this, "SKILL 3", PrivilegedInputProtocol.GAMEPAD_BUTTON_A, palette,
-                LinearLayout.LayoutParams(0, dp(48), 1f).apply { leftMargin = dp(3) },
-                fillColor = Color.rgb(22, 55, 82), labelColor = Color.rgb(120, 205, 255))
-        }
-        body.addView(skillRow, LinearLayout.LayoutParams(-1, dp(52)))
-        val utilityRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            addGamepadButton(this, "ULTI", PrivilegedInputProtocol.GAMEPAD_BUTTON_B, palette,
-                LinearLayout.LayoutParams(0, dp(38), 1f).apply { rightMargin = dp(3) },
-                fillColor = Color.rgb(83, 42, 24), labelColor = Color.rgb(255, 195, 105))
-            addGamepadButton(this, "RECALL", PrivilegedInputProtocol.GAMEPAD_BUTTON_SELECT, palette,
-                LinearLayout.LayoutParams(0, dp(38), 1f).apply { leftMargin = dp(3); rightMargin = dp(3) })
-            addGamepadButton(this, "REGEN", PrivilegedInputProtocol.GAMEPAD_BUTTON_START, palette,
-                LinearLayout.LayoutParams(0, dp(38), 1f).apply { leftMargin = dp(3) })
-        }
-        body.addView(utilityRow, LinearLayout.LayoutParams(-1, dp(42)).apply { topMargin = dp(4) })
         content.addView(body, LinearLayout.LayoutParams(-1, 0, 1f))
     }
 
@@ -7929,6 +7935,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 toggleWorkspacePanel()
             })
         addCustomControls(panel, overlayButtonOrder())
+        panel.addView(actionButton(R.drawable.ic_edit, "Mapping Visual") { showVisualMappingEditor() })
         panel.addView(
             actionButton(
                 if (overlayLayoutEditing) R.drawable.ic_chevron else R.drawable.ic_edit,
@@ -7938,6 +7945,81 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 if (demoMode) demoExplanation(NativeStrings.text("nativeYouCanRearrangeTheLayoutInThe"))
                 showMainMenu(panel)
             })
+    }
+
+    private fun showVisualMappingEditor() {
+        val host = root ?: return
+        val gameSurface = surfaceView ?: return
+        if (gameSurface.width <= 0 || gameSurface.height <= 0) {
+            gameSurface.post { showVisualMappingEditor() }
+            return
+        }
+        visualMappingOverlay?.let { old -> runCatching { host.removeView(old) } }
+        val prefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
+        val overlay = FrameLayout(this).apply { clipChildren = false; clipToPadding = false; setBackgroundColor(Color.argb(28, 0, 0, 0)) }
+        visualMappingOverlay = overlay
+        val toolbar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(8), dp(4), dp(8), dp(4))
+            background = GradientDrawable().apply { setColor(Color.argb(235, 11, 17, 26)); cornerRadius = dp(16).toFloat(); setStroke(dp(1), Color.argb(180, 100, 200, 255)) }
+        }
+        toolbar.addView(TextView(this).apply { text = "MAPPING VISUAL"; setTextColor(Color.WHITE); textSize = 11f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER_VERTICAL },
+            LinearLayout.LayoutParams(0, dp(38), 1f))
+        toolbar.addView(TextView(this).apply {
+            text = "RESET"; setTextColor(Color.rgb(255,190,95)); textSize = 10f; gravity = Gravity.CENTER
+            setOnClickListener {
+                prefs.edit().remove("S1_x").remove("S1_y").remove("S2_x").remove("S2_y").remove("S3_x").remove("S3_y").apply()
+                showVisualMappingEditor()
+            }
+        }, LinearLayout.LayoutParams(dp(58), dp(38)))
+        toolbar.addView(TextView(this).apply {
+            text = "SELESAI"; setTextColor(Color.rgb(100,220,255)); textSize = 10f; gravity = Gravity.CENTER
+            setOnClickListener { visualMappingOverlay?.let { runCatching { host.removeView(it) } }; visualMappingOverlay = null }
+        }, LinearLayout.LayoutParams(dp(66), dp(38)))
+        overlay.addView(toolbar, FrameLayout.LayoutParams(-1, dp(46), Gravity.TOP))
+        val specs = listOf(Triple("S1", "▲", Color.rgb(255,157,0)), Triple("S2", "◆", Color.rgb(0,229,255)), Triple("S3", "✦", Color.rgb(196,110,255)))
+        overlay.post {
+            if (overlay.width <= 0 || overlay.height <= 0) return@post
+            specs.forEach { spec ->
+                val key = spec.first
+                val size = dp(if (key == "S3") 78 else 64)
+                val defaultX = if (key == "S1") .50f else if (key == "S2") .70f else .84f
+                val defaultY = if (key == "S1") .88f else if (key == "S2") .72f else .84f
+                val x = (prefs.getFloat("${key}_x", defaultX) * overlay.width).roundToInt().coerceIn(0, (overlay.width-size).coerceAtLeast(0))
+                val y = (prefs.getFloat("${key}_y", defaultY) * overlay.height).roundToInt().coerceIn(dp(48), (overlay.height-size).coerceAtLeast(dp(48)))
+                val trigger = TextView(this).apply {
+                    text = "${spec.second}\n$key"; gravity = Gravity.CENTER; textSize = 11f; typeface = Typeface.DEFAULT_BOLD; setTextColor(spec.third)
+                    background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.argb(210,16,32,58)); setStroke(dp(2), spec.third) }
+                    elevation = dp(8).toFloat()
+                    var downX = 0f; var downY = 0f; var startX = x; var startY = y
+                    setOnTouchListener { view, event ->
+                        val lp = view.layoutParams as FrameLayout.LayoutParams
+                        when (event.actionMasked) {
+                            MotionEvent.ACTION_DOWN -> { downX=event.rawX; downY=event.rawY; startX=lp.leftMargin; startY=lp.topMargin; true }
+                            MotionEvent.ACTION_MOVE -> {
+                                lp.leftMargin=(startX+event.rawX-downX).roundToInt().coerceIn(0,(overlay.width-view.width).coerceAtLeast(0))
+                                lp.topMargin=(startY+event.rawY-downY).roundToInt().coerceIn(dp(48),(overlay.height-view.height).coerceAtLeast(dp(48)))
+                                view.layoutParams=lp; true
+                            }
+                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                prefs.edit().putFloat("${key}_x",(lp.leftMargin.toFloat()/overlay.width.coerceAtLeast(1)).coerceIn(0f,1f))
+                                    .putFloat("${key}_y",(lp.topMargin.toFloat()/overlay.height.coerceAtLeast(1)).coerceIn(0f,1f)).apply()
+                                true
+                            }
+                            else -> true
+                        }
+                    }
+                }
+                overlay.addView(trigger, FrameLayout.LayoutParams(size,size).apply { leftMargin=x; topMargin=y })
+            }
+        }
+        val hostLocation = IntArray(2); val surfaceLocation = IntArray(2)
+        host.getLocationInWindow(hostLocation); gameSurface.getLocationInWindow(surfaceLocation)
+        host.addView(overlay, FrameLayout.LayoutParams(gameSurface.width, gameSurface.height).apply {
+            leftMargin = surfaceLocation[0] - hostLocation[0]
+            topMargin = surfaceLocation[1] - hostLocation[1]
+        })
     }
 
     private fun inputModesView(): View {
