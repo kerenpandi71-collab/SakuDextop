@@ -7969,16 +7969,32 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             setOnClickListener { visualMappingOverlay?.let { runCatching { host.removeView(it) } }; visualMappingOverlay = null }
         }, LinearLayout.LayoutParams(dp(66), dp(38)))
         overlay.addView(toolbar, FrameLayout.LayoutParams(-1, dp(46), Gravity.TOP))
-        val specs = listOf(Triple("S1", "▲", Color.rgb(255,157,0)), Triple("S2", "◆", Color.rgb(0,229,255)), Triple("S3", "✦", Color.rgb(196,110,255)))
+        val specs = listOf(
+            Triple("FIRE ALL", "❄", Color.rgb(90,180,229)), Triple("REGEN", "✚", Color.rgb(108,224,108)),
+            Triple("FLICKER", "⚡", Color.rgb(255,204,0)), Triple("BUFF", "◆", Color.rgb(102,179,255)),
+            Triple("CC", "✦", Color.rgb(163,102,255)), Triple("CONCEAL", "◉", Color.rgb(77,255,234)),
+            Triple("ULT", "⚔", Color.rgb(77,140,255)), Triple("ATTACK", "⚔", Color.rgb(153,204,255))
+        )
         overlay.post {
             if (overlay.width <= 0 || overlay.height <= 0) return@post
             specs.forEach { spec ->
                 val key = spec.first
-                val size = dp(if (key == "S3") 78 else 64)
-                val defaultX = if (key == "S1") .50f else if (key == "S2") .70f else .84f
-                val defaultY = if (key == "S1") .88f else if (key == "S2") .72f else .84f
-                val x = (prefs.getFloat("${key}_x", defaultX) * overlay.width).roundToInt().coerceIn(0, (overlay.width-size).coerceAtLeast(0))
-                val y = (prefs.getFloat("${key}_y", defaultY) * overlay.height).roundToInt().coerceIn(dp(48), (overlay.height-size).coerceAtLeast(dp(48)))
+                val prefKey = key.replace(" ", "_")
+                val size = dp(if (key == "ULT" || key == "ATTACK") 76 else 56)
+                val defaults = when (key) {
+                    "FIRE ALL" -> .55f to .86f
+                    "REGEN" -> .68f to .86f
+                    "FLICKER" -> .80f to .86f
+                    "BUFF" -> .90f to .84f
+                    "CC" -> .73f to .58f
+                    "CONCEAL" -> .92f to .58f
+                    "ULT" -> .82f to .78f
+                    else -> .96f to .90f
+                }
+                val defaultX = defaults.first
+                val defaultY = defaults.second
+                val x = (prefs.getFloat("${prefKey}_x", defaultX) * overlay.width).roundToInt().coerceIn(0, (overlay.width-size).coerceAtLeast(0))
+                val y = (prefs.getFloat("${prefKey}_y", defaultY) * overlay.height).roundToInt().coerceIn(dp(48), (overlay.height-size).coerceAtLeast(dp(48)))
                 val trigger = TextView(this).apply {
                     text = "${spec.second}\n$key"; gravity = Gravity.CENTER; textSize = 11f; typeface = Typeface.DEFAULT_BOLD; setTextColor(spec.third)
                     background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.argb(210,16,32,58)); setStroke(dp(2), spec.third) }
@@ -7994,8 +8010,8 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                 view.layoutParams=lp; true
                             }
                             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                                prefs.edit().putFloat("${key}_x",(lp.leftMargin.toFloat()/overlay.width.coerceAtLeast(1)).coerceIn(0f,1f))
-                                    .putFloat("${key}_y",(lp.topMargin.toFloat()/overlay.height.coerceAtLeast(1)).coerceIn(0f,1f)).apply()
+                                prefs.edit().putFloat("${prefKey}_x",(lp.leftMargin.toFloat()/overlay.width.coerceAtLeast(1)).coerceIn(0f,1f))
+                                    .putFloat("${prefKey}_y",(lp.topMargin.toFloat()/overlay.height.coerceAtLeast(1)).coerceIn(0f,1f)).apply()
                                 true
                             }
                             else -> true
