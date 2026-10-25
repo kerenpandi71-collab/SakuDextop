@@ -7682,6 +7682,24 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 if (demoMode) demoExplanation(NativeStrings.text("nativeViewSavedWorkspacesAndSaveCurrentArrangement"))
                 toggleWorkspacePanel()
             })
+        panel.addView(actionButton(R.drawable.ic_gamepad, "SAKU MLBB GAMEPAD") {
+            val host = root
+            if (host == null || targetDisplayId < 0) {
+                Toast.makeText(this, "Mulai virtual display dulu", Toast.LENGTH_SHORT).show()
+            } else {
+                host.findViewWithTag<View>("saku_mlbb_gamepad")?.let { host.removeView(it) }
+                val overlay = MlbbGamepadOverlayView(
+                    this,
+                    inputDispatcher,
+                    { targetDisplayId },
+                    { targetWidth to targetHeight }
+                ) {
+                    host.findViewWithTag<View>("saku_mlbb_gamepad")?.let { host.removeView(it) }
+                }.apply { tag = "saku_mlbb_gamepad" }
+                host.addView(overlay, FrameLayout.LayoutParams(-1, -1))
+                Toast.makeText(this, "Gamepad aktif • tombol bisa dipindah lewat EDIT", Toast.LENGTH_SHORT).show()
+            }
+        })
         addCustomControls(panel, overlayButtonOrder())
         panel.addView(
             actionButton(
