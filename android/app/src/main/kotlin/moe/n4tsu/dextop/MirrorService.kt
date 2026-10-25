@@ -9896,9 +9896,30 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
     private fun displayRotationFor(@Suppress("UNUSED_PARAMETER") portrait: Boolean = requestedPortrait): Int = 0
 
     private fun updateCursorPosition(x: Float = cursorX, y: Float = cursorY) {
-        val normalizedX = x / targetWidth.coerceAtLeast(1)
-        val normalizedY = y / targetHeight.coerceAtLeast(1)
-        cursorView?.update(normalizedX, normalizedY)
+        val normalizedX = (x / targetWidth.coerceAtLeast(1)).coerceIn(0f, 1f)
+        val normalizedY = (y / targetHeight.coerceAtLeast(1)).coerceIn(0f, 1f)
+        val view = surfaceView
+        val gamepadLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE &&
+            keyboardDeckStyle == KeyboardDeckStyle.GAMEPAD && view != null &&
+            view.width > 0 && view.height > 0
+        if (gamepadLandscape && view != null) {
+            // The software cursor is drawn in the physical host window, while the
+            // game surface occupies only the center column between the two decks.
+            // Convert virtual-display fractions into that surface's on-screen rectangle.
+            val location = IntArray(2)
+            view.getLocationOnScreen(location)
+            val metrics = resources.displayMetrics
+            val screenWidth = metrics.widthPixels.coerceAtLeast(1)
+            val screenHeight = metrics.heightPixels.coerceAtLeast(1)
+            val screenX = location[0] + normalizedX * view.width
+            val screenY = location[1] + normalizedY * view.height
+            cursorView?.update(
+                (screenX / screenWidth).coerceIn(0f, 1f),
+                (screenY / screenHeight).coerceIn(0f, 1f)
+            )
+        } else {
+            cursorView?.update(normalizedX, normalizedY)
+        }
     }
 
     private fun toggleDisplayRotation180() {
