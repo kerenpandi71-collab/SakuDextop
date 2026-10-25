@@ -1042,6 +1042,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
     private var performanceHud: PerformanceHud? = null
     private var laptopContent: LinearLayout? = null
     private var laptopDeck: View? = null
+    private var laptopLandscapeAnalogDeck: View? = null
     private var laptopDeckContent: LinearLayout? = null
     private var laptopPreviewThemeId: String? = null
     private var laptopSettingsVisible = false
@@ -3615,6 +3616,10 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
     }
 
     private fun buildVirtualGamepadDeck(content: LinearLayout, palette: LaptopPalette) {
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            buildLandscapeActionDeck(content, palette)
+            return
+        }
         val title = TextView(this).apply {
             text = NativeStrings.text("nativeVirtualGamepad")
             gravity = Gravity.CENTER_VERTICAL
@@ -3625,18 +3630,95 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             setPadding(dp(4), 0, dp(4), dp(4))
         }
         content.addView(title, LinearLayout.LayoutParams(-1, dp(28)))
-
         content.addView(
             XboxGamepadView(
                 this,
                 onButtonChanged = ::injectVirtualGamepadButton,
                 onAxisChanged = ::injectVirtualGamepadAxis,
                 onHaptic = { performLaptopHaptic(null) },
-            ).apply {
-                contentDescription = NativeStrings.text("nativeVirtualGamepad")
-            },
+            ).apply { contentDescription = NativeStrings.text("nativeVirtualGamepad") },
             LinearLayout.LayoutParams(-1, 0, 1f),
         )
+    }
+
+    /** Landscape uses a true three-zone layout: analogs left, game in the middle, actions right. */
+    private fun buildLandscapeAnalogDeck(palette: LaptopPalette): View = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        gravity = Gravity.CENTER
+        setPadding(dp(3), dp(8), dp(3), dp(8))
+        setBackgroundColor(Color.TRANSPARENT)
+        fun stick(label: String, axisX: Int, axisY: Int): View {
+            val group = LinearLayout(this@MirrorService).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                addView(gamepadCaption(label, palette), LinearLayout.LayoutParams(-1, dp(18)))
+                addView(
+                    GamepadStickView(
+                        this@MirrorService,
+                        onChange = { x, y ->
+                            injectVirtualGamepadAxis(axisX, (x * 32767f).roundToInt())
+                            injectVirtualGamepadAxis(axisY, (y * 32767f).roundToInt())
+                        },
+                        onRelease = {
+                            injectVirtualGamepadAxis(axisX, 0)
+                            injectVirtualGamepadAxis(axisY, 0)
+                        },
+                        baseColor = Color.argb(70, 80, 80, 88),
+                        ringColor = palette.border,
+                        knobColor = palette.selected,
+                    ),
+                    LinearLayout.LayoutParams(-1, 0, 1f),
+                )
+            }
+            return group
+        }
+        addView(stick("LEFT ANALOG", PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_X, PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_Y),
+            LinearLayout.LayoutParams(-1, 0, 1f).apply { bottomMargin = dp(4) })
+        addView(stick("RIGHT ANALOG", PrivilegedInputProtocol.GAMEPAD_AXIS_RIGHT_X, PrivilegedInputProtocol.GAMEPAD_AXIS_RIGHT_Y),
+            LinearLayout.LayoutParams(-1, 0, 1f))
+    }
+
+    private fun buildLandscapeActionDeck(content: LinearLayout, palette: LaptopPalette) {
+        val title = TextView(this).apply {
+            text = "GAME ACTION"
+            gravity = Gravity.CENTER
+            typeface = laptopTypeface
+            textSize = 10f
+            letterSpacing = .08f
+            setTextColor(palette.text)
+            setPadding(0, 0, 0, dp(3))
+        }
+        content.addView(title, LinearLayout.LayoutParams(-1, dp(22)))
+        val body = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+        }
+        val topRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            addView(gamepadTrigger("L2", PrivilegedInputProtocol.GAMEPAD_AXIS_LTRIGGER, PrivilegedInputProtocol.GAMEPAD_BUTTON_L2, palette),
+                LinearLayout.LayoutParams(0, dp(42), 1f).apply { rightMargin = dp(3) })
+            addView(gamepadTrigger("R2", PrivilegedInputProtocol.GAMEPAD_AXIS_RTRIGGER, PrivilegedInputProtocol.GAMEPAD_BUTTON_R2, palette),
+                LinearLayout.LayoutParams(0, dp(42), 1f).apply { leftMargin = dp(3) })
+        }
+        body.addView(topRow, LinearLayout.LayoutParams(-1, dp(46)))
+        val controls = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+        controls.addView(buildGamepadDpad(palette), LinearLayout.LayoutParams(0, -1, 1f))
+        controls.addView(buildGamepadFaceButtons(palette, dp(34)), LinearLayout.LayoutParams(0, -2, 1.1f))
+        body.addView(controls, LinearLayout.LayoutParams(-1, 0, 1f))
+        val systemRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            addGamepadButton(this, "SEL", PrivilegedInputProtocol.GAMEPAD_BUTTON_SELECT, palette,
+                LinearLayout.LayoutParams(0, dp(32), 1f).apply { rightMargin = dp(3) })
+            addGamepadButton(this, "START", PrivilegedInputProtocol.GAMEPAD_BUTTON_START, palette,
+                LinearLayout.LayoutParams(0, dp(32), 1f).apply { leftMargin = dp(3) })
+        }
+        body.addView(systemRow, LinearLayout.LayoutParams(-1, dp(36)).apply { topMargin = dp(3) })
+        content.addView(body, LinearLayout.LayoutParams(-1, 0, 1f))
     }
 
     /** Compact Game Boy-style controller: D-pad on the left, A/B on the right. */
@@ -4145,6 +4227,17 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         val surface = surfaceView ?: return
         val horizontal = !forceStandard && isLandscapeGamepadHost()
         content.orientation = if (horizontal) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+
+        if (horizontal && laptopLandscapeAnalogDeck == null) {
+            val palette = loadLaptopPalette()
+            laptopLandscapeAnalogDeck = buildLandscapeAnalogDeck(palette).also { analog ->
+                content.addView(analog, 0, LinearLayout.LayoutParams(0, -1, .5f))
+            }
+        } else if (!horizontal) {
+            laptopLandscapeAnalogDeck?.let { content.removeView(it) }
+            laptopLandscapeAnalogDeck = null
+        }
+
         val params = surface.layoutParams as? LinearLayout.LayoutParams
         if (params != null) {
             params.width = if (horizontal) 0 else -1
@@ -4152,7 +4245,11 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             params.weight = if (horizontal) 1.5f else 1f
             surface.layoutParams = params
         }
-        laptopDeck?.let { it.layoutParams = laptopDeckLayoutParams() }
+        laptopLandscapeAnalogDeck?.layoutParams = LinearLayout.LayoutParams(0, -1, .5f)
+        laptopDeck?.let {
+            it.layoutParams = if (horizontal) LinearLayout.LayoutParams(0, -1, .5f)
+                else laptopDeckLayoutParams()
+        }
         content.requestLayout()
         surface.requestLayout()
     }
