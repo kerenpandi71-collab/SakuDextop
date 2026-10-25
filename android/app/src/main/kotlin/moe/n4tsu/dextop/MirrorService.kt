@@ -3763,15 +3763,17 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             }
             return group
         }
-        addView(stick("LEFT ANALOG", PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_X, PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_Y),
-            LinearLayout.LayoutParams(-1, 0, 1f).apply { bottomMargin = dp(4) })
-        addView(stick("RIGHT ANALOG", PrivilegedInputProtocol.GAMEPAD_AXIS_RIGHT_X, PrivilegedInputProtocol.GAMEPAD_AXIS_RIGHT_Y),
-            LinearLayout.LayoutParams(-1, 0, 1f))
+        // MOBA layout: movement stick at the lower-left; no right analog.
+        addView(View(this@MirrorService), LinearLayout.LayoutParams(-1, 0, 1f))
+        addView(
+            stick("GERAK", PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_X, PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_Y),
+            LinearLayout.LayoutParams(-1, 0, 1.15f)
+        )
     }
 
     private fun buildLandscapeActionDeck(content: LinearLayout, palette: LaptopPalette) {
         val title = TextView(this).apply {
-            text = "GAME ACTION"
+            text = "SAKU MOBA"
             gravity = Gravity.CENTER
             typeface = laptopTypeface
             textSize = 10f
@@ -3787,28 +3789,38 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         val topRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            addView(gamepadTrigger("L2", PrivilegedInputProtocol.GAMEPAD_AXIS_TRIGGER_L, PrivilegedInputProtocol.GAMEPAD_BUTTON_L2, palette),
-                LinearLayout.LayoutParams(0, dp(42), 1f).apply { rightMargin = dp(3) })
-            addView(gamepadTrigger("R2", PrivilegedInputProtocol.GAMEPAD_AXIS_TRIGGER_R, PrivilegedInputProtocol.GAMEPAD_BUTTON_R2, palette),
-                LinearLayout.LayoutParams(0, dp(42), 1f).apply { leftMargin = dp(3) })
+            addView(gamepadTrigger("BATTLE", PrivilegedInputProtocol.GAMEPAD_AXIS_TRIGGER_L, PrivilegedInputProtocol.GAMEPAD_BUTTON_L2, palette),
+                LinearLayout.LayoutParams(0, dp(38), 1f).apply { rightMargin = dp(3) })
+            addView(gamepadTrigger("ATTACK", PrivilegedInputProtocol.GAMEPAD_AXIS_TRIGGER_R, PrivilegedInputProtocol.GAMEPAD_BUTTON_R2, palette),
+                LinearLayout.LayoutParams(0, dp(38), 1f).apply { leftMargin = dp(3) })
         }
-        body.addView(topRow, LinearLayout.LayoutParams(-1, dp(46)))
-        val controls = LinearLayout(this).apply {
+        body.addView(topRow, LinearLayout.LayoutParams(-1, dp(42)))
+        val skillRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
+            addGamepadButton(this, "SKILL 1", PrivilegedInputProtocol.GAMEPAD_BUTTON_X, palette,
+                LinearLayout.LayoutParams(0, dp(48), 1f).apply { rightMargin = dp(3) },
+                fillColor = Color.rgb(22, 55, 82), labelColor = Color.rgb(120, 205, 255))
+            addGamepadButton(this, "SKILL 2", PrivilegedInputProtocol.GAMEPAD_BUTTON_Y, palette,
+                LinearLayout.LayoutParams(0, dp(48), 1f).apply { leftMargin = dp(3); rightMargin = dp(3) },
+                fillColor = Color.rgb(22, 55, 82), labelColor = Color.rgb(120, 205, 255))
+            addGamepadButton(this, "SKILL 3", PrivilegedInputProtocol.GAMEPAD_BUTTON_A, palette,
+                LinearLayout.LayoutParams(0, dp(48), 1f).apply { leftMargin = dp(3) },
+                fillColor = Color.rgb(22, 55, 82), labelColor = Color.rgb(120, 205, 255))
         }
-        controls.addView(buildGamepadDpad(palette), LinearLayout.LayoutParams(0, -1, 1f))
-        controls.addView(buildGamepadFaceButtons(palette, dp(34)), LinearLayout.LayoutParams(0, -2, 1.1f))
-        body.addView(controls, LinearLayout.LayoutParams(-1, 0, 1f))
-        val systemRow = LinearLayout(this).apply {
+        body.addView(skillRow, LinearLayout.LayoutParams(-1, dp(52)))
+        val utilityRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            addGamepadButton(this, "SEL", PrivilegedInputProtocol.GAMEPAD_BUTTON_SELECT, palette,
-                LinearLayout.LayoutParams(0, dp(32), 1f).apply { rightMargin = dp(3) })
-            addGamepadButton(this, "START", PrivilegedInputProtocol.GAMEPAD_BUTTON_START, palette,
-                LinearLayout.LayoutParams(0, dp(32), 1f).apply { leftMargin = dp(3) })
+            addGamepadButton(this, "ULTI", PrivilegedInputProtocol.GAMEPAD_BUTTON_B, palette,
+                LinearLayout.LayoutParams(0, dp(38), 1f).apply { rightMargin = dp(3) },
+                fillColor = Color.rgb(83, 42, 24), labelColor = Color.rgb(255, 195, 105))
+            addGamepadButton(this, "RECALL", PrivilegedInputProtocol.GAMEPAD_BUTTON_SELECT, palette,
+                LinearLayout.LayoutParams(0, dp(38), 1f).apply { leftMargin = dp(3); rightMargin = dp(3) })
+            addGamepadButton(this, "REGEN", PrivilegedInputProtocol.GAMEPAD_BUTTON_START, palette,
+                LinearLayout.LayoutParams(0, dp(38), 1f).apply { leftMargin = dp(3) })
         }
-        body.addView(systemRow, LinearLayout.LayoutParams(-1, dp(36)).apply { topMargin = dp(3) })
+        body.addView(utilityRow, LinearLayout.LayoutParams(-1, dp(42)).apply { topMargin = dp(4) })
         content.addView(body, LinearLayout.LayoutParams(-1, 0, 1f))
     }
 
@@ -11461,16 +11473,36 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             .getOrDefault(false)
     }
 
+    /**
+     * Translate the software cursor's configured coordinate space into the
+     * actual virtual display input space. Gamepad mode narrows the mirrored
+     * SurfaceView to make room for the side decks; using host dimensions here
+     * would make taps drift toward the right on landscape displays.
+     */
+    private fun mapCursorToInputDisplay(x: Float, y: Float): Pair<Float, Float> {
+        val display = getSystemService(DisplayManager::class.java).getDisplay(targetDisplayId)
+            ?: return x.coerceIn(0f, targetWidth - 1f) to y.coerceIn(0f, targetHeight - 1f)
+        val metrics = runCatching {
+            android.util.DisplayMetrics().also { display.getRealMetrics(it) }
+        }.getOrNull() ?: return x.coerceIn(0f, targetWidth - 1f) to y.coerceIn(0f, targetHeight - 1f)
+        val inputWidth = metrics.widthPixels.takeIf { it > 0 } ?: targetWidth
+        val inputHeight = metrics.heightPixels.takeIf { it > 0 } ?: targetHeight
+        val mappedX = (x.coerceIn(0f, targetWidth - 1f) / targetWidth.coerceAtLeast(1)) * inputWidth
+        val mappedY = (y.coerceIn(0f, targetHeight - 1f) / targetHeight.coerceAtLeast(1)) * inputHeight
+        return mappedX.coerceIn(0f, inputWidth - 1f) to mappedY.coerceIn(0f, inputHeight - 1f)
+    }
+
     private fun injectTouch(action: Int, x: Float, y: Float) {
         if (targetDisplayId < 0) return
         runCatching {
+            val (inputX, inputY) = mapCursorToInputDisplay(x, y)
             val properties = MotionEvent.PointerProperties().apply {
                 id = 0
                 toolType = MotionEvent.TOOL_TYPE_FINGER
             }
             val coordinates = MotionEvent.PointerCoords().apply {
-                this.x = x
-                this.y = y
+                this.x = inputX
+                this.y = inputY
                 pressure = if (action == MotionEvent.ACTION_UP) 0f else 1f
                 size = 1f
             }
