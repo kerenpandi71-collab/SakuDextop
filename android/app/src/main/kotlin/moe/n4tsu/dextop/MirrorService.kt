@@ -1068,6 +1068,11 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
     private val laptopInputExecutor = Executors.newSingleThreadExecutor { task ->
         Thread(task, "Dextop-laptop-input").apply { isDaemon = true }
     }
+    // Keep gamepad axis IPC off the UI thread. A dedicated serial worker lets us
+    // drop stale stick samples while preserving the newest direction immediately.
+    private val gamepadAxisExecutor = Executors.newSingleThreadExecutor { task ->
+        Thread(task, "Dextop-gamepad-axis").apply { isDaemon = true }
+    }
     private val laptopSwipeHandler = Handler(Looper.getMainLooper())
     private var laptopSwipeGeneration = 0L
     private val laptopSwipeImeCoordinator by lazy(LazyThreadSafetyMode.NONE) {
@@ -3746,31 +3751,36 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         var pendingCodeX = PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_X
         var pendingCodeY = PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_Y
         var axisDispatchPosted = false
-        val axisDispatchHandler = Handler(Looper.getMainLooper())
-        val dispatchPendingAxes = Runnable {
-            axisDispatchPosted = false
-            val x = pendingAxisX
-            val y = pendingAxisY
-            if (x != lastSentAxisX) {
-                lastSentAxisX = x
-                injectVirtualGamepadAxis(pendingCodeX, x)
-            }
-            if (y != lastSentAxisY) {
-                lastSentAxisY = y
-                injectVirtualGamepadAxis(pendingCodeY, y)
-            }
-        }
+        val axisLock = Any()
         fun queueAxes(codeX: Int, codeY: Int, x: Int, y: Int) {
-            pendingCodeX = codeX
-            pendingCodeY = codeY
-            pendingAxisX = x
-            pendingAxisY = y
-            // Coalesce only while a dispatch is already queued. Do not impose a
-            // fixed 8 ms timer: that timer adds visible delay during rapid
-            // direction reversals (for example, Fanny cable turns).
-            if (!axisDispatchPosted) {
-                axisDispatchPosted = true
-                axisDispatchHandler.post(dispatchPendingAxes)
+            val shouldPost = synchronized(axisLock) {
+                pendingCodeX = codeX
+                pendingCodeY = codeY
+                pendingAxisX = x
+                pendingAxisY = y
+                if (axisDispatchPosted) false else {
+                    axisDispatchPosted = true
+                    true
+                }
+            }
+            if (shouldPost) {
+                gamepadAxisExecutor.execute {
+                    val sample = synchronized(axisLock) {
+                        val values = intArrayOf(pendingCodeX, pendingAxisX, pendingCodeY, pendingAxisY)
+                        axisDispatchPosted = false
+                        values
+                    }
+                    // Binder IPC is synchronous; doing it on the UI thread stalls touch
+                    // delivery and makes fast cable-direction reversals feel choppy.
+                    if (sample[1] != lastSentAxisX) {
+                        lastSentAxisX = sample[1]
+                        injectVirtualGamepadAxis(sample[0], sample[1])
+                    }
+                    if (sample[3] != lastSentAxisY) {
+                        lastSentAxisY = sample[3]
+                        injectVirtualGamepadAxis(sample[2], sample[3])
+                    }
+                }
             }
         }
         fun stick(label: String, axisX: Int, axisY: Int): View {
@@ -3803,14 +3813,18 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                             queueAxes(axisX, axisY, nextX, nextY)
                         },
                         onRelease = {
-                            axisDispatchHandler.removeCallbacks(dispatchPendingAxes)
-                            axisDispatchPosted = false
-                            pendingAxisX = 0
-                            pendingAxisY = 0
-                            lastSentAxisX = 0
-                            lastSentAxisY = 0
-                            injectVirtualGamepadAxis(axisX, 0)
-                            injectVirtualGamepadAxis(axisY, 0)
+                            synchronized(axisLock) {
+                                pendingAxisX = 0
+                                pendingAxisY = 0
+                            }
+                            // Queue release behind any in-flight sample so a stale nonzero
+                            // value can never arrive after the stick has been lifted.
+                            gamepadAxisExecutor.execute {
+                                injectVirtualGamepadAxis(axisX, 0)
+                                injectVirtualGamepadAxis(axisY, 0)
+                                lastSentAxisX = 0
+                                lastSentAxisY = 0
+                            }
                         },
                         baseColor = Color.argb(70, 80, 80, 88),
                         ringColor = palette.border,
