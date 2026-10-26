@@ -1,0 +1,3268 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Indonesian (`id`).
+class AppLocalizationsId extends AppLocalizations {
+  AppLocalizationsId([String locale = 'id']) : super(locale);
+
+  @override
+  String get home => 'Beranda';
+
+  @override
+  String get settings => 'Pengaturan';
+
+  @override
+  String get resolution => 'Resolusi';
+
+  @override
+  String get displayMagnification => 'Pembesaran tampilan';
+
+  @override
+  String get displayMagnificationDescription =>
+      'Memperbesar seluruh desktop agar lebih mudah dilihat. Nilai yang lebih tinggi mengurangi ruang kerja.';
+
+  @override
+  String get magnifyWindowsWithDisplay => 'Terapkan skala ke jendela';
+
+  @override
+  String get magnifyWindowsWithDisplayDescription =>
+      'Perbesar juga jendela, teks, dan kontrol agar sesuai dengan skala tampilan.';
+
+  @override
+  String get theme => 'Tema';
+
+  @override
+  String get system => 'Sistem';
+
+  @override
+  String get light => 'Terang';
+
+  @override
+  String get dark => 'Gelap';
+
+  @override
+  String get display => 'Tampilan';
+
+  @override
+  String get secureDisplay => 'Tampilan aman';
+
+  @override
+  String get secureDisplayDescription =>
+      'Izinkan konten yang dilindungi ditampilkan';
+
+  @override
+  String get mirrorBackend => 'Metode pencerminan layar';
+
+  @override
+  String get mirrorBackendAuto => 'Otomatis (kompatibilitas)';
+
+  @override
+  String get mirrorBackendAutoDescription =>
+      'Gunakan metode terbaik yang tersedia untuk perangkat ini';
+
+  @override
+  String get mirrorBackendWindowManager => 'WindowManager';
+
+  @override
+  String get mirrorBackendSurfaceControl => 'SurfaceControl';
+
+  @override
+  String get mirrorBackendVirtualDisplay => 'VirtualDisplay';
+
+  @override
+  String get castMode => 'Metode Google Cast';
+
+  @override
+  String get castModeSimple => 'Kompatibilitas';
+
+  @override
+  String get castModeSimpleDescription =>
+      'Prioritizes connection stability and compatibility with more displays';
+
+  @override
+  String get castModeReceiver => 'Latensi rendah';
+
+  @override
+  String get castModeReceiverDescription =>
+      'Prioritizes responsive controls while streaming the display';
+
+  @override
+  String get updateAvailable => 'Pembaruan tersedia';
+
+  @override
+  String get updateAvailableTitle => 'Versi baru tersedia di GitHub!';
+
+  @override
+  String get playUpdateAvailableTitle =>
+      'An update is available on Google Play';
+
+  @override
+  String get playUpdateAvailableDescription =>
+      'You can update to the latest version through Google Play.';
+
+  @override
+  String get updateNow => 'Perbarui sekarang';
+
+  @override
+  String get checkForUpdates => 'Periksa pembaruan';
+
+  @override
+  String get checkingForUpdates => 'Mengambil informasi pembaruan';
+
+  @override
+  String get updateNotChecked =>
+      'Update information has not been retrieved yet';
+
+  @override
+  String get upToDate => 'Aplikasi sudah terbaru';
+
+  @override
+  String get updateCheckFailed => 'Tidak dapat mengambil informasi pembaruan';
+
+  @override
+  String get currentVersion => 'Saat ini';
+
+  @override
+  String get latestVersion => 'Terbaru';
+
+  @override
+  String get openOnGitHub => 'Buka di GitHub';
+
+  @override
+  String get close => 'Tutup';
+
+  @override
+  String get deviceInfo => 'Informasi perangkat';
+
+  @override
+  String get desktopMode => 'Mode desktop aktif';
+
+  @override
+  String get accessibilitySettings => 'Pengaturan aksesibilitas';
+
+  @override
+  String get accessibilityDescription => 'Buka pengaturan layanan Dextop';
+
+  @override
+  String get appInfo => 'Informasi aplikasi';
+
+  @override
+  String get appInfoEmbeddedBinder => 'Built-in Binder';
+
+  @override
+  String get appInfoEmbeddedBinderIncluded => 'Included in this build';
+
+  @override
+  String get appInfoEmbeddedBinderNotIncluded => 'Not included in this build';
+
+  @override
+  String get appInfoEmbeddedBinderProvider => 'Usage status';
+
+  @override
+  String get appInfoEmbeddedBinderSelected => 'In use';
+
+  @override
+  String get appInfoEmbeddedBinderStandby => 'Using an external provider';
+
+  @override
+  String get appInfoEmbeddedBinderConnection => 'Binder connection';
+
+  @override
+  String get appInfoEmbeddedBinderPermission => 'Dextop permission';
+
+  @override
+  String get appInfoEmbeddedBinderNotifications => 'Notification permission';
+
+  @override
+  String get appInfoStatusConnected => 'Connected';
+
+  @override
+  String get appInfoStatusDisconnected => 'Disconnected';
+
+  @override
+  String get appInfoStatusGranted => 'Granted';
+
+  @override
+  String get appInfoStatusNotGranted => 'Not granted';
+
+  @override
+  String get licenses => 'Lisensi sumber terbuka';
+
+  @override
+  String get licensesDescription => 'Lihat lisensi Flutter dan dependensi';
+
+  @override
+  String get landscape => 'Lanskap';
+
+  @override
+  String get portrait => 'Potret';
+
+  @override
+  String get stopped => 'Berhenti';
+
+  @override
+  String get running => 'Berjalan';
+
+  @override
+  String get start => 'Mulai';
+
+  @override
+  String get stop => 'Hentikan';
+
+  @override
+  String get customAdd => 'Tambah resolusi khusus';
+
+  @override
+  String get editResolution => 'Edit resolusi';
+
+  @override
+  String get add => 'Tambah';
+
+  @override
+  String get save => 'Simpan';
+
+  @override
+  String get deleteResolution => 'Hapus resolusi ini';
+
+  @override
+  String get width => 'Lebar';
+
+  @override
+  String get height => 'Tinggi';
+
+  @override
+  String get protectedContent => 'Allow protected content to be displayed';
+
+  @override
+  String get version => 'Version 1.0.0';
+
+  @override
+  String get setupWelcome => 'Welcome to Dextop.';
+
+  @override
+  String get setupTagline =>
+      'A perfect desktop environment on your smartphone.';
+
+  @override
+  String get setupBegin => 'Start';
+
+  @override
+  String get setupPhaseTerms => 'Terms of use';
+
+  @override
+  String get setupPhaseDriver => 'Connect Dextop';
+
+  @override
+  String get setupTutorialTitle => 'Setup overview';
+
+  @override
+  String get setupPhaseAccessibility => 'Accessibility';
+
+  @override
+  String get setupPhaseReady => 'Ready';
+
+  @override
+  String get setupPhaseShizuku => 'Shizuku';
+
+  @override
+  String get setupPhaseDevice => 'Check your device';
+
+  @override
+  String get setupPhaseDemo => 'Try the controls';
+
+  @override
+  String get back => 'Kembali';
+
+  @override
+  String get review => 'Tinjau';
+
+  @override
+  String get reviewThreeFingerGesture => 'Review three-finger gesture';
+
+  @override
+  String get continueLabel => 'Lanjutkan';
+
+  @override
+  String get done => 'Selesai';
+
+  @override
+  String get incomplete => 'Belum selesai';
+
+  @override
+  String get setupSystemTitle => 'Uses system-level features';
+
+  @override
+  String get setupSystemDescription =>
+      'Dextop uses Shizuku and ADB to control virtual displays, screen orientation, input, and system UI. The AccessibilityService API displays and operates the desktop overlay, routes user-requested touch, pointer, and navigation input, and restores the device UI when a session ends. Accessibility data is not collected, stored, or shared.';
+
+  @override
+  String get setupTutorialDriverTitle => 'Connect Dextop to the driver';
+
+  @override
+  String get setupTutorialDriverDescription =>
+      'Pairing is required only the first time. We’ll guide you through the required steps.';
+
+  @override
+  String get setupTutorialAccessibilityTitle => 'Turn on Accessibility';
+
+  @override
+  String get setupTutorialAccessibilityDescription =>
+      'Dextop uses Accessibility to display and control the desktop environment. In the settings screen, open Installed apps and turn on Dextop.';
+
+  @override
+  String get setupTutorialAccessibilityButton => 'Open Accessibility settings';
+
+  @override
+  String get setupTutorialAccessibilityEnabled => 'Accessibility permission';
+
+  @override
+  String get accessibilityDisclosureTitle => 'Accessibility service disclosure';
+
+  @override
+  String get accessibilityDisclosureBody =>
+      'Dextop uses the Accessibility Service to display and control the desktop, detect the active input target, move apps opened from notifications, and provide keyboard and mouse control.\n\nThe service may access apps and windows shown on screen, interaction events, the focused text field and its text, and keyboard and mouse input. This information is processed only on your device to provide Dextop features. Dextop does not collect, store, transmit, or share this information with third parties.';
+
+  @override
+  String get accessibilityDisclosureAgree => 'Agree and open settings';
+
+  @override
+  String get accessibilityDisclosureDecline => 'Do not agree';
+
+  @override
+  String get setupTutorialReadyTitle => 'You’re ready to use Dextop';
+
+  @override
+  String get setupTutorialReadyDescription =>
+      'Once these two steps are complete, all that’s left is to start using Dextop.';
+
+  @override
+  String get setupDisclaimer =>
+      'The developer is not responsible for any defects, data loss, or impact on device functionality caused by differences in device or OS implementation, system updates, conflicts with other apps, etc. Please understand the contents before use.';
+
+  @override
+  String get setupShizukuTitle => 'Prepare Shizuku';
+
+  @override
+  String get setupShizukuDescription =>
+      'Dextop uses Shizuku to securely access system functions.';
+
+  @override
+  String get setupInstallShizuku => 'Install Shizuku';
+
+  @override
+  String get setupConfigureShizuku => 'Set up Shizuku';
+
+  @override
+  String get setupShizukuHint =>
+      'Open Shizuku, follow the steps under \"Pairing\" in order, then start Shizuku.';
+
+  @override
+  String get setupOpenShizuku => 'Open Shizuku';
+
+  @override
+  String get setupValidate => 'Finished setup? Verify now';
+
+  @override
+  String get setupDextopPermission => 'Dextop permission';
+
+  @override
+  String get setupInstallPlay => 'Install from Google Play';
+
+  @override
+  String get setupAllowPermission => 'Grant permission';
+
+  @override
+  String get setupProviderChoiceTitle => 'Choose a privilege service';
+
+  @override
+  String get setupProviderChoiceDescription =>
+      'Multiple Shizuku-compatible services are installed. Choose which service Dextop should use.';
+
+  @override
+  String get setupUseStellar => 'Stellar (recommended)';
+
+  @override
+  String get setupUseShizuku => 'Shizuku';
+
+  @override
+  String get setupRunningAsRoot => 'The service is running as root';
+
+  @override
+  String get setupRootVerified =>
+      'Shizuku was verified as running with root privileges. Grant Dextop permission next.';
+
+  @override
+  String get setupRootNotRunning =>
+      'Shizuku could not be verified as running with root privileges. Start it with root and try again.';
+
+  @override
+  String get setupQuestionOpen => 'Have you opened Shizuku?';
+
+  @override
+  String get setupQuestionPair =>
+      'Have you completed all the steps listed under \"Pairing\"?';
+
+  @override
+  String get setupQuestionStart =>
+      'Did you tap \"Start\" in Shizuku and confirm that it says \"Shizuku is running\"?';
+
+  @override
+  String get yes => 'Ya';
+
+  @override
+  String get no => 'Tidak';
+
+  @override
+  String get setupVerified => 'Shizuku setup verified';
+
+  @override
+  String get setupAccessVerified => 'Access permission setup verified';
+
+  @override
+  String get setupVerificationFailed =>
+      'Could not verify that Shizuku is configured and running. Complete the steps in Shizuku, then try again.';
+
+  @override
+  String get setupPermissionCheckFailed =>
+      'Could not check permissions for Shizuku';
+
+  @override
+  String get setupDeviceTitle => 'Configuration on this device';
+
+  @override
+  String get model => 'Model';
+
+  @override
+  String get vendor => 'Produsen';
+
+  @override
+  String get desktopUi => 'Desktop UI';
+
+  @override
+  String get detectedResolution => 'Resolusi terdeteksi otomatis';
+
+  @override
+  String get automaticResolution => 'Otomatis';
+
+  @override
+  String get loadingLabel => 'Memuat…';
+
+  @override
+  String get setupDeviceDescription =>
+      'This information is used to set the initial resolution and device-specific desktop controls.';
+
+  @override
+  String get setupGestureTitle => 'Open the control panel with a gesture';
+
+  @override
+  String get setupGestureDescription =>
+      'Place three fingers on the three circles below at the same time.';
+
+  @override
+  String get setupInstallGitHub => 'Download from GitHub';
+
+  @override
+  String get setupGestureReviewed => 'The new gestures have been reviewed.';
+
+  @override
+  String get setupGestureReview => 'Review demo again';
+
+  @override
+  String get setupGestureStart => 'Start demo';
+
+  @override
+  String get setupGestureLandscape =>
+      'Landscape\nSwipe right with three fingers from the left edge';
+
+  @override
+  String get setupGesturePortrait =>
+      'Portrait\nSwipe down with three fingers from the top edge';
+
+  @override
+  String get setupGestureNext => 'Next';
+
+  @override
+  String get uiTwoFingerTap => 'Two-finger tap';
+
+  @override
+  String get ui3FingerTap => 'Three-finger tap';
+
+  @override
+  String get ui4Divisions => 'Four-way split';
+
+  @override
+  String get uiDextopIsReady => 'Dextop is ready';
+
+  @override
+  String get uiDextopStopping => 'Finishing Dextop shutdown';
+
+  @override
+  String get uiStopDextop => 'Hentikan Dextop';
+
+  @override
+  String get uiDextopCanBeRestarted => 'Dextop can be resumed';
+
+  @override
+  String get uiOpenDextop => 'Buka Dextop';
+
+  @override
+  String get uiCreateADextopSession => 'Create a Dextop session';
+
+  @override
+  String get uiDextopWorkspaceJson => 'Dextop workspace JSON';
+
+  @override
+  String get uiPerformanceDisplayOnDextop =>
+      'Show performance overlay in Dextop';
+
+  @override
+  String get uiDoNotSleepWhileRunningDextop =>
+      'Keep screen awake while Dextop is running';
+
+  @override
+  String get uiRealTimeDisplayOfFpsMemoryPower =>
+      'Show FPS, memory, power usage, and battery in real time';
+
+  @override
+  String get uiCouldNotLoadJson => 'Could not load JSON';
+
+  @override
+  String get uiSecureSettingsPermission => 'Secure Settings permission';
+
+  @override
+  String get uiAllowShizukuPermissions => 'Allow Shizuku permissions';
+
+  @override
+  String get uiInstallShizuku => 'Install Shizuku';
+
+  @override
+  String get uiCheckingShizukuConnection => 'Checking Shizuku connection';
+
+  @override
+  String get uiShizukuConnection => 'Shizuku connection';
+
+  @override
+  String get uiCopy => ' copy';
+
+  @override
+  String get uiOthers => 'Other';
+
+  @override
+  String get uiAccessibilityOverlay => 'Accessibility overlay';
+
+  @override
+  String get uiAccessibilityServices => 'Accessibility service';
+
+  @override
+  String get uiAppNotFound => 'App not found';
+
+  @override
+  String get uiAppsAndWorkspace => 'Apps and workspace';
+
+  @override
+  String get uiLaunchTheAppAndConfigureYourWorkspace =>
+      'Launch apps and configure workspaces';
+
+  @override
+  String get uiRestartTheApp => 'Mulai ulang aplikasi';
+
+  @override
+  String get uiSearchApp => 'Cari aplikasi';
+
+  @override
+  String get uiAppMemory => 'App memory';
+
+  @override
+  String get uiAppLauncher => 'App launcher';
+
+  @override
+  String get uiAppLauncherSettings => 'App launcher settings';
+
+  @override
+  String get uiAppLaunchFunction => 'App launch function';
+
+  @override
+  String get uiImport => 'Impor';
+
+  @override
+  String get uiExport => 'Ekspor';
+
+  @override
+  String get uiCursor => 'Kursor';
+
+  @override
+  String get uiCancel => 'Batal';
+
+  @override
+  String get uiQuickSettingsTile => 'Quick Settings tile';
+
+  @override
+  String get uiGesture => 'Gestur';
+
+  @override
+  String get uiSecondaryIme => 'Secondary IME';
+
+  @override
+  String get uiSecureDisplayFoldable =>
+      'Secure display, mirroring method, Foldable';
+
+  @override
+  String get uiSecurity => 'Keamanan';
+
+  @override
+  String get topologyTitle => 'Display arrangement';
+
+  @override
+  String get topologyArrangeDisplays => 'Display arrangement';
+
+  @override
+  String get topologySummary =>
+      'Optimize the layout for your physical monitor arrangement';
+
+  @override
+  String get topologyDescription =>
+      'Drag displays to rearrange them. Place each screen so pointer movement between displays matches their physical setup.';
+
+  @override
+  String get topologyApply => 'Apply';
+
+  @override
+  String get topologyApplied => 'Display arrangement applied';
+
+  @override
+  String get topologyIdentify => 'Identify';
+
+  @override
+  String get topologyRefresh => 'Refresh';
+
+  @override
+  String get topologyReset => 'Reset';
+
+  @override
+  String get topologyBuiltInScreen => 'Built-in screen';
+
+  @override
+  String get displayIncludePhoneSummary =>
+      'Enable moving apps and the mouse pointer across displays';
+
+  @override
+  String get displayAutoHideTaskbarSummary =>
+      'Automatically hide the desktop taskbar when it is not in use';
+
+  @override
+  String get displayForceInternal120Hz => 'Output at maximum refresh rate';
+
+  @override
+  String get displayForceInternal120HzSummary =>
+      'Creates the mirror at the highest refresh rate provided by the OS';
+
+  @override
+  String get displaySoftwareCursorFallback => 'Use software cursor';
+
+  @override
+  String get displaySoftwareCursorFallbackSummary =>
+      'Use the previous software cursor when enabled';
+
+  @override
+  String get mouseSettingsTitle => 'Mouse';
+
+  @override
+  String get mouseSettingsDescription =>
+      'Configure virtual mouse input and cursor behavior';
+
+  @override
+  String get virtualPointerProfile => 'Input device';
+
+  @override
+  String get virtualTouchpad => 'Touchpad';
+
+  @override
+  String get virtualTouchpadDescription => 'Register as a virtual touchpad';
+
+  @override
+  String get virtualPointerMouse => 'Virtual mouse';
+
+  @override
+  String get virtualPointerMouseDescription =>
+      'Register as a relative mouse device';
+
+  @override
+  String get virtualPointerSoftware => 'Software cursor';
+
+  @override
+  String get virtualPointerSoftwareDescription =>
+      'Use Dextop\'s original software cursor';
+
+  @override
+  String get virtualMouseScrollDirection => 'Scroll direction';
+
+  @override
+  String get virtualMouseNaturalScroll => 'Natural (Mac)';
+
+  @override
+  String get virtualMouseStandardScroll => 'Standard (Windows)';
+
+  @override
+  String get uiConvenience => 'Convenience';
+
+  @override
+  String get uiDisplayCategory => 'Display';
+
+  @override
+  String get foldableLaptopMode => 'Automatically detect laptop mode';
+
+  @override
+  String get foldableLaptopModeDescription =>
+      'Automatically enable laptop mode when a supported fold angle is detected';
+
+  @override
+  String get topologyNoDisplays => 'No displays are available to arrange';
+
+  @override
+  String get topologyUnavailable =>
+      'Display topology is unavailable on this device';
+
+  @override
+  String get displaySettingsTitle => 'Display settings';
+
+  @override
+  String get displaySettingsSummary =>
+      'Manage display arrangement and resolution';
+
+  @override
+  String get displayResolutionListTitle => 'Display resolution';
+
+  @override
+  String get displayResolutionListSummary =>
+      'View connected displays and their supported modes';
+
+  @override
+  String get displayDetailsTitle => 'Display information';
+
+  @override
+  String get displayNoLongerAvailable =>
+      'The selected display is no longer available';
+
+  @override
+  String get displaySupportedResolutions => 'Supported resolutions';
+
+  @override
+  String get displayDextopResolutionTitle => 'Dextop session resolution';
+
+  @override
+  String get displayDextopResolutionSummary =>
+      'Change this from the resolution on the home screen';
+
+  @override
+  String get displayCurrentMode => 'Currently in use';
+
+  @override
+  String get displayModeApplied => 'Display resolution changed';
+
+  @override
+  String get uiTap => 'Tap';
+
+  @override
+  String get uiTapPressAndHoldMultiFingerOperation =>
+      'Tap, long press, and multi-finger controls';
+
+  @override
+  String get uiOpenAppOnDesktop => 'Open app on desktop';
+
+  @override
+  String get uiDesktopMode => 'Desktop mode';
+
+  @override
+  String get uiDesktopFeatures => 'Desktop features';
+
+  @override
+  String get uiTrackpad => 'Trackpad';
+
+  @override
+  String get uiDrag => 'Drag';
+
+  @override
+  String get uiBattery => 'Battery';
+
+  @override
+  String get uiPerformance => 'Performance';
+
+  @override
+  String get uiPerformanceCompatibility => 'Performance and compatibility';
+
+  @override
+  String get uiItSupportsMultiTouchAndTheThree =>
+      'Enables multi-touch and changes the three-finger gesture to a swipe from the left edge.';
+
+  @override
+  String get uiMainLarge2Sub => 'Large main + two secondary';
+
+  @override
+  String get uiMainLeft => 'Main (left)';
+
+  @override
+  String get uiLayout => 'Layout';
+
+  @override
+  String get uiWorkSpace => 'Workspace';
+
+  @override
+  String get uiCopiedWorkspaceJsonToClipboard =>
+      'Copied workspace JSON to clipboard';
+
+  @override
+  String get uiImportWorkspace => 'Import workspace';
+
+  @override
+  String get uiSaveWorkspace => 'Save workspace';
+
+  @override
+  String get uiDeleteWorkspace => 'Delete workspace';
+
+  @override
+  String get uiEditWorkspace => 'Edit workspace';
+
+  @override
+  String get uiUp => 'Move up';
+
+  @override
+  String get uiDividedIntoUpperAndLowerParts => 'Top/bottom split';
+
+  @override
+  String get uiUpperHalf => 'Top half';
+
+  @override
+  String get uiMoveDown => 'Move down';
+
+  @override
+  String get uiLowerHalf => 'Bottom half';
+
+  @override
+  String get uiCenter => 'Center';
+
+  @override
+  String get uiCompatibilityDiagnosis => 'Compatibility diagnostics';
+
+  @override
+  String get uiVirtualDisplayCreation => 'Virtual display creation';
+
+  @override
+  String get uiOpenASavedAppConfiguration => 'Open a saved app configuration';
+
+  @override
+  String get uiNoSavedWorkspaces => 'No saved workspaces';
+
+  @override
+  String get uiInputAndGestures => 'Input and gestures';
+
+  @override
+  String get uiInputMode => 'Input mode';
+
+  @override
+  String get uiCancelFullScreen => 'Exit full screen';
+
+  @override
+  String get uiReDiagnosis => 'Run diagnostics again';
+
+  @override
+  String get uiRestart => 'Resume';
+
+  @override
+  String get uiAvailableMemory => 'Available memory';
+
+  @override
+  String get uiDelete => 'Delete';
+
+  @override
+  String get uiYouCanRestoreYourPreviousSession =>
+      'You can restore your previous session';
+
+  @override
+  String get uiRight => 'Right';
+
+  @override
+  String get uiRight13 => 'Right 1/3';
+
+  @override
+  String get uiRight23 => 'Right 2/3';
+
+  @override
+  String get uiRightClick => 'Right click';
+
+  @override
+  String get uiUpperRight => 'Top right';
+
+  @override
+  String get uiLowerRight => 'Bottom right';
+
+  @override
+  String get uiRightHalf => 'Right half';
+
+  @override
+  String get uiName => 'Name';
+
+  @override
+  String get uiLargeScreenFoldable => 'Large screen/Foldable';
+
+  @override
+  String get uiActualFps => 'Actual FPS';
+
+  @override
+  String get uiExperimentalMultiTouch => 'Experimental multi-touch';
+
+  @override
+  String get uiExperimentalFeatures => 'Experimental features';
+
+  @override
+  String get uiLeft => 'Left';
+
+  @override
+  String get uiLeft13 => 'Left 1/3';
+
+  @override
+  String get uiLeft13Right23 => 'Left 1/3 + right 2/3';
+
+  @override
+  String get uiLeft23 => 'Left 2/3';
+
+  @override
+  String get uiLeft23Right13 => 'Left 2/3 + right 1/3';
+
+  @override
+  String get uiLeftCenterRight => 'Left / center / right';
+
+  @override
+  String get uiUpperLeft => 'Top left';
+
+  @override
+  String get uiUpperLeftUpperRightLowerHalf =>
+      'Upper left, upper right, lower half';
+
+  @override
+  String get uiLowerLeft => 'Bottom left';
+
+  @override
+  String get uiLeftHalf => 'Left half';
+
+  @override
+  String get uiDividedIntoLeftAndRight => 'Left/right split';
+
+  @override
+  String get uiSwipeRightWithThreeFingersFromThe =>
+      'Swipe right with three fingers from the left edge';
+
+  @override
+  String get uiRecoverySession => 'Session recovery';
+
+  @override
+  String get uiEstimatedPowerConsumption => 'Estimated power consumption';
+
+  @override
+  String get uiOperationOverlay => 'Control overlay';
+
+  @override
+  String get uiShowActionOverlay => 'Show control overlay';
+
+  @override
+  String get uiOperationMenu => 'Control menu';
+
+  @override
+  String get uiThereIsAnExistingSession => 'There is an existing session';
+
+  @override
+  String get uiSaveConfiguration => 'Save configuration';
+
+  @override
+  String get uiRestorePrivileges => 'Restore permissions';
+
+  @override
+  String get uiChangeToHorizontalHold => 'Switch to landscape';
+
+  @override
+  String get uiPreparationIsRequired => 'Setup required';
+
+  @override
+  String get uiPhysicalKeyboard => 'Physical keyboard';
+
+  @override
+  String get uiPhysicalMouse => 'Physical mouse';
+
+  @override
+  String get uiConditionAndDiagnosis => 'Status and diagnostics';
+
+  @override
+  String get uiPreventsTheScreenFromTurningOffAutomatically =>
+      'Prevents the screen from turning off automatically';
+
+  @override
+  String get uiDestruction => 'Discard';
+
+  @override
+  String get uiTerminalAndPermissions => 'Device and permissions';
+
+  @override
+  String get uiDeviceInformationDesktopModeAccessibility =>
+      'Device information, desktop mode, accessibility';
+
+  @override
+  String get uiTerminalResolution => 'Device resolution';
+
+  @override
+  String get uiEnd => 'End';
+
+  @override
+  String get uiTerminationProcessingCompletedSuccessfully =>
+      'Session ended successfully.';
+
+  @override
+  String get uiEdit => 'Edit';
+
+  @override
+  String get uiChangeToPortraitOrientation => 'Switch to portrait';
+
+  @override
+  String get uiVerticalHorizontalSwitching => 'Portrait / landscape';
+
+  @override
+  String get uiDisplayOptimization => 'Display optimization';
+
+  @override
+  String get uiDisplayRefreshRate => 'Display refresh rate';
+
+  @override
+  String get uiReproduction => 'Duplicate';
+
+  @override
+  String get uiManageLaunchedAppsAndConfigurations =>
+      'Manage apps to launch and their layouts';
+
+  @override
+  String get uiCouldNotStart => 'Could not start';
+
+  @override
+  String get uiLongPress => 'Long press';
+
+  @override
+  String get uiAutomaticallyUsesMeasuredResolutionForOpenAnd =>
+      'Automatically uses measured resolution for open and closed states';
+
+  @override
+  String get uiStart => 'Start';
+
+  @override
+  String get uiRunningAuto => 'Running (Auto)';
+
+  @override
+  String get uiRunningAutoPlus => 'Running (Auto+)';
+
+  @override
+  String get uiStartPhoneDextop => 'Start Dextop on this phone';
+
+  @override
+  String get uiStopAndroidAuto => 'Stop (Android Auto)';
+
+  @override
+  String get uiAutomaticSwitchingAccordingToOpenClosedState =>
+      'Automatic switching according to open/closed state';
+
+  @override
+  String get uiOpeningQuote => '“';
+
+  @override
+  String get uiDeleteWorkspaceQuestionSuffix => '” — delete this workspace?';
+
+  @override
+  String get uiAbnormalSessionWarning =>
+      'The session ended in an invalid state.\nSome Android system functions may still be disabled.';
+
+  @override
+  String get uiChecking => 'Checking';
+
+  @override
+  String get uiIdle => 'Idle';
+
+  @override
+  String get uiAvailable => 'Available';
+
+  @override
+  String get uiUnavailable => 'Unavailable';
+
+  @override
+  String get appName => 'Dextop';
+
+  @override
+  String get uiAndroid => 'Android';
+
+  @override
+  String get uiGitHub => 'GitHub';
+
+  @override
+  String get uiGitHubRepository => 'NarYuki/Dextop';
+
+  @override
+  String get diagnosticLog => 'Operation log and device diagnostics';
+
+  @override
+  String get diagnosticLogDescription =>
+      'View app logs, capability detection, and detailed device specifications';
+
+  @override
+  String get loadDiagnosticLog => 'Load diagnostic report';
+
+  @override
+  String get copyDiagnosticLog => 'Copy';
+
+  @override
+  String get shareDiagnosticLog => 'Share';
+
+  @override
+  String get clearDiagnosticLog => 'Clear log';
+
+  @override
+  String get deviceReport => 'Device report';
+
+  @override
+  String get uiCpuTemperature => 'CPU temperature';
+
+  @override
+  String get deviceReportDescription =>
+      'Report device and feature compatibility by email';
+
+  @override
+  String get deviceReportIntro =>
+      'Device details are collected automatically. Select the result for each feature.';
+
+  @override
+  String get reportWorking => 'Working';
+
+  @override
+  String get reportNotWorking => 'Not working';
+
+  @override
+  String get reportUntested => 'Not tested';
+
+  @override
+  String get reportOverall => 'Overall status';
+
+  @override
+  String get reportNotes => 'Other notes';
+
+  @override
+  String get sendDeviceReport => 'Send report by email';
+
+  @override
+  String get reportEmailUnavailable => 'Could not open an email app';
+
+  @override
+  String get reportTemplateTitle => 'Dextop device report';
+
+  @override
+  String get reportNoNotes => 'None';
+
+  @override
+  String get reportNoSessionLog =>
+      'No completed Dextop session has been recorded yet.';
+
+  @override
+  String get reportFeatureStartup => 'App startup and device detection';
+
+  @override
+  String get reportFeatureSession => 'Dextop session startup';
+
+  @override
+  String get reportFeatureVirtualDisplay => 'VirtualDisplay mirroring';
+
+  @override
+  String get reportFeatureWindowManager => 'WindowManager mirroring';
+
+  @override
+  String get reportFeatureSurfaceControl => 'SurfaceControl mirroring';
+
+  @override
+  String get reportFeatureLandscape => 'Landscape mode';
+
+  @override
+  String get reportFeaturePortrait => 'Portrait mode';
+
+  @override
+  String get reportFeatureSecureDisplay => 'Secure display';
+
+  @override
+  String get reportFeatureLauncher => 'App launcher and freeform windows';
+
+  @override
+  String get reportFeatureWorkspace => 'Workspace save and restore';
+
+  @override
+  String get reportFeatureCursor => 'Cursor and touchpad input';
+
+  @override
+  String get reportFeatureDirectTouch => 'Direct-touch input';
+
+  @override
+  String get reportFeatureMultiTouch => 'Multi-touch scrolling and pinch zoom';
+
+  @override
+  String get reportFeatureGesture => 'Three-finger overlay gesture';
+
+  @override
+  String get reportFeatureMouse => 'Physical mouse';
+
+  @override
+  String get reportFeatureKeyboard => 'Physical keyboard';
+
+  @override
+  String get reportFeatureRouting =>
+      'Physical mouse and keyboard display routing';
+
+  @override
+  String get reportFeatureFoldable => 'Foldable automatic resolution';
+
+  @override
+  String get reportFeaturePerformance => 'Performance overlay';
+
+  @override
+  String get reportFeatureCleanup => 'Session cleanup and Android restoration';
+
+  @override
+  String get samsungExperimentalTitle =>
+      'Experimental Samsung desktop settings';
+
+  @override
+  String get samsungUnavailable => 'Available on Samsung devices only';
+
+  @override
+  String get samsungExperimentalDescription =>
+      'Change settings hidden by the native DeX settings screen';
+
+  @override
+  String get samsungSettingsTitle => 'Samsung desktop settings';
+
+  @override
+  String get samsungSettingsSummary => 'Display, input and taskbar settings';
+
+  @override
+  String get samsungRestoreSuccess => 'Samsung settings restored';
+
+  @override
+  String get samsungConfirmTitle => 'Confirm settings access';
+
+  @override
+  String get samsungPermanentWarning =>
+      'These settings may permanently affect Dextop and the desktop environment used normally until they are reset.';
+
+  @override
+  String get samsungAcceptEnable => 'Accept and enable';
+
+  @override
+  String get samsungAboutSetting => 'About this setting';
+
+  @override
+  String get samsungRestoreEnvironment => 'Restore environment';
+
+  @override
+  String get samsungSettingsIntro =>
+      'Directly changes DeX values hidden when Samsung Settings reports no external display. Changes affect Samsung DeX and corresponding Dextop features.';
+
+  @override
+  String get samsungResolution => 'External resolution';
+
+  @override
+  String get samsungScreenZoom => 'Screen zoom (DPI)';
+
+  @override
+  String get samsungFontScale => 'Font size';
+
+  @override
+  String get samsungScreenTimeout => 'Screen timeout';
+
+  @override
+  String get samsungAudioOutput => 'Play audio on external display';
+
+  @override
+  String get samsungDisplayOrientation => 'External display rotation';
+
+  @override
+  String get samsungDisplayArrangement => 'Display arrangement';
+
+  @override
+  String get samsungSectionInput => 'Input';
+
+  @override
+  String get samsungSectionDesktop => 'Desktop';
+
+  @override
+  String get samsungInputLockedWhileRunning =>
+      'Conflicting Samsung input settings cannot be changed while Dextop is running.';
+
+  @override
+  String get samsungAutorunTouchpad => 'Start touchpad automatically';
+
+  @override
+  String get samsungTouchpadScrollDirection => 'Reverse scrolling direction';
+
+  @override
+  String get samsungTouchKeyboard => 'Show on-screen keyboard when connected';
+
+  @override
+  String get samsungKeyboardDex => 'Show keyboard with physical keyboard';
+
+  @override
+  String get samsungSpenInputMode => 'Use S Pen as a mouse';
+
+  @override
+  String get samsungThreeFingerGesture => 'Three-finger gesture';
+
+  @override
+  String get samsungFourFingerGesture => 'Four-finger gesture';
+
+  @override
+  String get samsungAutoHideTaskbar => 'Automatically hide taskbar';
+
+  @override
+  String get samsungDexCommandArrow => 'Show command arrow';
+
+  @override
+  String get samsungIncludePhoneDisplay => 'Include Dextop in display topology';
+
+  @override
+  String get samsungMirrorPhoneDisplay => 'Mirror built-in display';
+
+  @override
+  String get samsungReviewEnable => 'Review warning and enable changes';
+
+  @override
+  String get samsungSeconds15 => '15 seconds';
+
+  @override
+  String get samsungSeconds30 => '30 seconds';
+
+  @override
+  String get samsungMinute1 => '1 minute';
+
+  @override
+  String get samsungMinutes2 => '2 minutes';
+
+  @override
+  String get samsungMinutes5 => '5 minutes';
+
+  @override
+  String get samsungMinutes10 => '10 minutes';
+
+  @override
+  String get samsungMinutes20 => '20 minutes';
+
+  @override
+  String get samsungMinutes30 => '30 minutes';
+
+  @override
+  String get samsungHour1 => '1 hour';
+
+  @override
+  String get samsungLeft => 'Left';
+
+  @override
+  String get samsungRight => 'Right';
+
+  @override
+  String get samsungAutomatic => 'Automatic';
+
+  @override
+  String get samsungGestureNone => 'None';
+
+  @override
+  String get samsungGestureApps => 'Apps';
+
+  @override
+  String get samsungGestureRecents => 'Recents';
+
+  @override
+  String get samsungGestureNotifications => 'Notifications';
+
+  @override
+  String get samsungGestureQuickSettings => 'Quick settings';
+
+  @override
+  String get samsungHelp_resolution =>
+      'Sets the workspace Samsung Desktop uses to draw apps and windows. Higher resolutions fit more content but make controls smaller and increase rendering load. Lower resolutions favor readability and performance. This is stored separately from Dextop\'s resolution.';
+
+  @override
+  String get samsungHelp_screenZoom =>
+      'Scales text, icons, and controls across Samsung Desktop. A higher DPI makes everything larger and easier to read; a lower DPI fits more content on screen. It does not change the actual resolution.';
+
+  @override
+  String get samsungHelp_fontScale =>
+      'Changes text size without substantially resizing icons or windows. Use it to improve readability while preserving the workspace. Very large values can cause text to wrap or overflow in some apps.';
+
+  @override
+  String get samsungHelp_screenTimeout =>
+      'Controls how long Samsung Desktop stays lit without input. A longer timeout is useful for documents or video, but may increase power use and heat.';
+
+  @override
+  String get samsungHelp_audioOutput =>
+      'When enabled, media and notification audio is routed to the HDMI display or dock. When disabled, the phone or currently selected audio device is normally used. Enabling this with a display that has no speakers may result in no audible sound.';
+
+  @override
+  String get samsungHelp_displayOrientation =>
+      'Rotates Samsung Desktop to the selected angle. Use this for a portrait-mounted or rotatable monitor. A value that does not match the physical screen can make the picture and pointer direction feel misaligned.';
+
+  @override
+  String get samsungHelp_displayArrangement =>
+      'Tells Samsung whether the phone is positioned to the left or right of the external display. This changes which screen edge the pointer crosses, making movement between screens match the physical setup.';
+
+  @override
+  String get samsungHelp_autorunTouchpad =>
+      'When enabled, Samsung\'s touchpad opens automatically on the phone after connecting, allowing the phone to work like a laptop touchpad. It duplicates Dextop input handling, so this option is hidden while Dextop is running.';
+
+  @override
+  String get samsungHelp_touchpadScrollDirection =>
+      'Reverses the relationship between two-finger movement and page movement on Samsung\'s touchpad. Use it to choose between mouse-wheel-style and direct-touch-style scrolling.';
+
+  @override
+  String get samsungHelp_touchKeyboard =>
+      'When enabled, the on-screen keyboard can appear after selecting a text field in desktop mode. It is useful without a physical keyboard, but overlaps Dextop keyboard handling, so it is hidden while Dextop is running.';
+
+  @override
+  String get samsungHelp_keyboardDex =>
+      'When enabled, the on-screen keyboard remains available even with a physical keyboard connected. This helps with emoji, handwriting, and voice input, but reduces workspace and conflicts with Dextop IME handling.';
+
+  @override
+  String get samsungHelp_spenInputMode =>
+      'When enabled, S Pen acts as a pointer, including hover before touching the screen. This improves precise desktop selection. Check drawing apps if you rely on their normal pressure-sensitive pen behavior.';
+
+  @override
+  String get samsungHelp_threeFingerGesture =>
+      'Runs the selected action—such as Apps, Home, Recents, or Back—when Samsung detects a three-finger gesture. Dextop also uses three fingers for its controls, so this option is hidden while Dextop is running.';
+
+  @override
+  String get samsungHelp_fourFingerGesture =>
+      'Runs the selected system action from a supported four-finger touchpad gesture. It can speed up navigation, but conflicts with Dextop multi-touch detection and is therefore hidden during a Dextop session.';
+
+  @override
+  String get samsungHelp_autoHideTaskbar =>
+      'When enabled, Samsung Desktop hides the taskbar while it is not in use, giving apps more vertical space. Move the pointer to the bottom edge to reveal it. Disable this if you prefer app switching to remain visible.';
+
+  @override
+  String get samsungHelp_dexCommandArrow =>
+      'When enabled, Samsung Desktop shows an arrow for opening Samsung command controls. It provides faster access to Samsung actions, but may overlap Dextop overlays or edge gestures.';
+
+  @override
+  String get samsungHelp_includePhoneDisplay =>
+      'When enabled, the built-in phone screen becomes part of the same desktop topology as the external display, allowing apps and the pointer to move between them. Leave it disabled to keep the phone as an independent Android control screen.';
+
+  @override
+  String get samsungHelp_mirrorPhoneDisplay =>
+      'When enabled, the external desktop shows the same content as the built-in phone screen. This is useful for demonstrations, but it duplicates rather than expands the workspace, so the two screens cannot show independent apps.';
+
+  @override
+  String get keyboardSettingsTitle => 'Keyboard';
+
+  @override
+  String get keyboardSettingsDescription =>
+      'Keyboard themes and swipe input languages';
+
+  @override
+  String get keyboardSwipeLanguages => 'Swipe input languages';
+
+  @override
+  String get keyboardSwipeLanguagesDescription =>
+      'Choose the languages shown when you hold MENU.';
+
+  @override
+  String get keyboardSwipeAddLanguage => 'Add language';
+
+  @override
+  String get keyboardSwipeDefaultLanguage => 'Default';
+
+  @override
+  String get keyboardSwipeInput => 'Swipe input';
+
+  @override
+  String get keyboardSwipeInputDescription =>
+      'Enter words by tracing across the keyboard. Disabled by default.';
+
+  @override
+  String get keyboardSwipeCandidates => 'Show conversion candidates';
+
+  @override
+  String get keyboardSwipeCandidatesDescription =>
+      'Show a selectable candidate list after swipe input.';
+
+  @override
+  String get keyboardThemesTitle => 'Keyboard themes';
+
+  @override
+  String get keyboardThemesChoose => 'Choose a theme';
+
+  @override
+  String get keyboardThemesNew => 'New keyboard theme';
+
+  @override
+  String get keyboardThemesName => 'Theme name';
+
+  @override
+  String get keyboardThemesCreate => 'Create';
+
+  @override
+  String get keyboardThemesEdit => 'Edit';
+
+  @override
+  String get keyboardThemesDone => 'Done';
+
+  @override
+  String get keyboardThemesDeleteTitle => 'Delete theme?';
+
+  @override
+  String keyboardThemesDeleteBody(String name) {
+    return 'Delete “$name”? This cannot be undone.';
+  }
+
+  @override
+  String get keyboardThemesBuiltIn => 'Built-in themes cannot be deleted';
+
+  @override
+  String get keyboardThemesSelectFirst =>
+      'Select this theme first to preview it.';
+
+  @override
+  String get keyboardThemesStartFirst =>
+      'Start Dextop first to show the real laptop overlay.';
+
+  @override
+  String get keyboardThemesAdd => 'Add custom theme';
+
+  @override
+  String get keyboardThemesPreview => 'Preview keyboard demo';
+
+  @override
+  String get keyboardThemesEditTip => 'Edit';
+
+  @override
+  String get keyboardThemesImage => 'Choose background image';
+
+  @override
+  String get keyboardThemesExport => 'Export theme';
+
+  @override
+  String get keyboardThemesExportDialog => 'Export keyboard theme';
+
+  @override
+  String get keyboardThemesOpacity => 'Opacity';
+
+  @override
+  String get keyboardThemesBlur => 'Blur';
+
+  @override
+  String get keyboardThemesRadius => 'Corner radius';
+
+  @override
+  String get keyboardThemesBackground => 'Background';
+
+  @override
+  String get keyboardThemesKey => 'Key';
+
+  @override
+  String get keyboardThemesBorder => 'Border';
+
+  @override
+  String get keyboardThemesText => 'Text';
+
+  @override
+  String get keyboardThemesTrackpad => 'Trackpad';
+
+  @override
+  String get keyboardThemesKeyOpacity => 'Key opacity';
+
+  @override
+  String get keyboardThemesTrackpadOpacity => 'Trackpad opacity';
+
+  @override
+  String get keyboardThemesShowTrackpadLabel => 'Show TRACKPAD label';
+
+  @override
+  String get keyboardThemesDescription =>
+      'Laptop keyboard themes and custom appearance';
+
+  @override
+  String get autoSettingsTitle => 'Auto';
+
+  @override
+  String get autoSettingsDescription =>
+      'Auto display and phone-side mirroring options';
+
+  @override
+  String get autoSettingsOptions => 'Android Auto';
+
+  @override
+  String get autoMatchPhoneOrientation =>
+      'Match phone mirror orientation to Auto';
+
+  @override
+  String get autoMatchPhoneOrientationDescription =>
+      'When Dextop is shown in Auto from the phone-side mirror, adjust its orientation to the head-unit aspect ratio.';
+
+  @override
+  String get autoExperimentalFeatures => 'Experimental features';
+
+  @override
+  String get autoHiddenDisplay => 'Hide the Auto virtual display on the phone';
+
+  @override
+  String get autoHiddenDisplayDescription =>
+      'Transfers the Auto desktop without showing its virtual display overlay on the phone. Availability depends on the device.';
+
+  @override
+  String get autoDisplayModeDescription =>
+      'Android Auto uses an independent desktop display sized for the connected head unit.';
+
+  @override
+  String get setupEmbeddedTitle => 'Set up Dextop access';
+
+  @override
+  String get setupEmbeddedDescription =>
+      'Connect Dextop\'s built-in access service.\n\n1. Allow notifications.\n2. Open and enable Wireless debugging.\n3. Tap Pair device with pairing code.\n4. Enter Android\'s six-digit code in the notification field.';
+
+  @override
+  String get setupEmbeddedSetupDescription =>
+      'Open “Pair device with pairing code” in Wireless debugging. When the pairing service is detected, a notification automatically appears for entering the six-digit code.';
+
+  @override
+  String get setupEmbeddedWirelessDebuggingDescription =>
+      'Open Android’s Wireless debugging settings and enable Wireless debugging there.';
+
+  @override
+  String get setupEmbeddedOpenWirelessDebugging => 'Open Wireless debugging';
+
+  @override
+  String get setupEmbeddedEnableWirelessDebugging =>
+      'Enable Wireless debugging';
+
+  @override
+  String get setupEmbeddedPairingCode => 'Pairing code';
+
+  @override
+  String get setupEmbeddedPairingCodeHint =>
+      'Enter the six-digit code shown by Android';
+
+  @override
+  String get setupEmbeddedInvalidCode => 'Enter a valid six-digit code';
+
+  @override
+  String get setupEmbeddedPair => 'Pair and start';
+
+  @override
+  String get setupEmbeddedPairAndStart => 'Set up Dextop access';
+
+  @override
+  String get setupEmbeddedIncluded => 'Dextop access service included';
+
+  @override
+  String get setupEmbeddedConnectedDescription =>
+      'Dextop access permission is ready to use.';
+
+  @override
+  String get setupEmbeddedConfigure => 'Wireless debugging paired';
+
+  @override
+  String get setupEmbeddedPairingFailed => 'Pairing failed';
+
+  @override
+  String get setupEmbeddedStartFailed =>
+      'The Dextop access service could not be started';
+
+  @override
+  String get setupEmbeddedNotificationPermission => 'Notification permission';
+
+  @override
+  String get setupEmbeddedAllowNotifications => 'Allow notifications';
+
+  @override
+  String get setupEmbeddedSearchingPairing => 'Searching for pairing service';
+
+  @override
+  String get setupEmbeddedPairingServiceFound => 'Pairing service found';
+
+  @override
+  String get setupEmbeddedPairingInProgress => 'Pairing in progress';
+
+  @override
+  String get setupEmbeddedPairingServiceNotFound => 'Pairing service not found';
+
+  @override
+  String get setupEmbeddedRetryPairing => 'Retry pairing';
+
+  @override
+  String get setupEmbeddedPairingNotificationReady =>
+      'Enter the six-digit code in the notification input field.';
+
+  @override
+  String get experimentalCoverDisplay => 'Cover display session';
+
+  @override
+  String get experimentalGamepad => 'Experimental gamepad';
+
+  @override
+  String get experimentalGamepadDescription =>
+      'Enable the virtual gamepad and cover-display L/R back buttons';
+
+  @override
+  String get experimentalCoverDisplayDescription =>
+      'Use Android or an independent Dextop session on a foldable cover display';
+
+  @override
+  String get experimentalCoverDisplayUnavailable =>
+      'Available on foldable devices only';
+
+  @override
+  String get experimentalForceLaptopMode => 'Force laptop mode availability';
+
+  @override
+  String get experimentalForceLaptopModeDescription =>
+      'Allow laptop mode to be started manually from the overlay on non-foldable devices';
+
+  @override
+  String get experimentalBlackBerryMode => 'BlackBerry mode';
+
+  @override
+  String get experimentalBlackBerryModeDescription =>
+      'Enable a compact phone keyboard layout inspired by physical keyboards from the Dextop overlay';
+
+  @override
+  String get blackBerryAutoStart => 'Open BlackBerry mode automatically';
+
+  @override
+  String get blackBerryAutoStartDescription =>
+      'Show the BlackBerry keyboard automatically when a Dextop session starts in portrait';
+
+  @override
+  String get keyboardHaptics => 'Keyboard haptics';
+
+  @override
+  String get keyboardHapticsDescription =>
+      'Vibrate when pressing keyboard keys';
+
+  @override
+  String get pointerHaptics => 'Pointer haptics';
+
+  @override
+  String get pointerHapticsDescription =>
+      'Vibrate for trackpad clicks and gestures';
+
+  @override
+  String get hapticsStrength => 'Haptic strength';
+
+  @override
+  String get nativeUnknownPermissionResult =>
+      'Shizuku returned an unknown permission result';
+
+  @override
+  String get nativeDevice => 'Device';
+
+  @override
+  String get nativeCoverDisplay => 'Cover display';
+
+  @override
+  String get nativeCoverDisplayDescription =>
+      'Open Android or create an independent Dextop session on the cover display';
+
+  @override
+  String get nativeCoverAndroidDescription =>
+      'Use the cover display for normal Android while the main Dextop session continues.';
+
+  @override
+  String get nativeCoverDextopDescription =>
+      'Create a Dextop session on the cover display independently from the main session.';
+
+  @override
+  String get nativeOpenCoverAndroid => 'Open Android on cover display';
+
+  @override
+  String get nativeStopCoverAndroid => 'End Android session';
+
+  @override
+  String get nativeStartCoverDextop => 'Create Dextop session on cover display';
+
+  @override
+  String get nativeStopCoverDextop => 'End cover Dextop session';
+
+  @override
+  String get nativeCoverDisplayFailed => 'Could not update the cover display';
+
+  @override
+  String get nativeBackButtons => 'Back buttons';
+
+  @override
+  String get nativeBackButtonsDescription =>
+      'Use the cover display as L/R and L2/R2 shoulder buttons';
+
+  @override
+  String get nativeStartBackButtons => 'Start back buttons';
+
+  @override
+  String get nativeStopBackButtons => 'End back buttons';
+
+  @override
+  String get nativeBackButtonsConfirmTitle => 'Switch the cover display?';
+
+  @override
+  String get nativeBackButtonsConfirmMessage =>
+      'The current cover-display activity will end before the back buttons appear.';
+
+  @override
+  String get nativeSwitchToResolutionSuffix =>
+      'Switch to this resolution and DPI';
+
+  @override
+  String get nativeShizukuUnavailable => 'Shizuku is unavailable';
+
+  @override
+  String get nativeSelectedAppCannotLaunch =>
+      'The selected app cannot be launched';
+
+  @override
+  String get nativeShizukuBinderUnavailable =>
+      'The Shizuku connection is unavailable';
+
+  @override
+  String get nativeMirrorSurfaceUnavailable =>
+      'The mirror surface is unavailable';
+
+  @override
+  String get nativeRotationReleaseUnsupported =>
+      'Releasing rotation lock is not supported';
+
+  @override
+  String get nativePerformanceHudFormat =>
+      '%1\$.1f FPS  |  %2\$d MB\nBattery: %3\$d%%  |  %4\$s\nCPU: %6\$s  |  Input: %5\$s';
+
+  @override
+  String get nativeInputMouse => 'Mouse';
+
+  @override
+  String get nativeInputTouch => 'Touch';
+
+  @override
+  String get nativeInputTrackpad => 'Trackpad';
+
+  @override
+  String get nativeInputIdle => 'Idle';
+
+  @override
+  String get nativePhysicalMouse => 'Switch physical mouse destination';
+
+  @override
+  String get nativePhysicalKeyboard => 'Switch physical keyboard destination';
+
+  @override
+  String get nativePhysicalMouseDemo =>
+      'Switch the physical mouse between Android and Dextop. Available on supported devices while an external display is connected.';
+
+  @override
+  String get nativePhysicalKeyboardDemo =>
+      'Switch the physical keyboard between Android and Dextop. Available on supported devices while an external display is connected.';
+
+  @override
+  String get nativeTheThreeFingerGestureIsAnEssential =>
+      'The three-finger gesture is essential while using Dextop.\\nTap a button to see what it does.';
+
+  @override
+  String get nativeAsusZenuiRogUiDesktop => 'ASUS ZenUI / ROG UI Desktop';
+
+  @override
+  String get nativeAndroidDesktopFreeform => 'Android Desktop (Freeform)';
+
+  @override
+  String get nativeColorosDesktop => 'ColorOS desktop';
+
+  @override
+  String get nativeAdjustTheVolumeOfPlaybackOnDextop =>
+      'Adjust media volume in Dextop';
+
+  @override
+  String get nativeSwitchBetweenPortraitAndLandscapeOrientationOf =>
+      'Switch Dextop between portrait and landscape';
+
+  @override
+  String get nativeSwitchDextopResolutionAndDpi =>
+      'Change Dextop resolution and DPI';
+
+  @override
+  String get nativePauseDextopAndReturnYourAndroidTo =>
+      'Pause Dextop and return Android to normal operation.';
+
+  @override
+  String get nativeTerminateYourDextopSession => 'End the Dextop session';
+
+  @override
+  String get nativeAdjustTheBrightnessOfTheDesktopDisplay =>
+      'Adjust Dextop display brightness';
+
+  @override
+  String get nativeHonorMagicosDesktop => 'HONOR MagicOS Desktop';
+
+  @override
+  String get nativeHuaweiEmuiDesktop => 'Huawei EMUI Desktop';
+
+  @override
+  String get nativeHyperosMiuiDesktop => 'HyperOS / MIUI Desktop';
+
+  @override
+  String get nativeMotorolaLenovoDesktop => 'Motorola / Lenovo Desktop';
+
+  @override
+  String get nativeNothingOsDesktop => 'Nothing OS Desktop';
+
+  @override
+  String get nativeOriginosFuntouchOsDesktop =>
+      'OriginOS / Funtouch OS Desktop';
+
+  @override
+  String get nativePixelAndroidDesktop => 'Pixel Android Desktop';
+
+  @override
+  String get nativeShizukuPermissionCheckTimedOut =>
+      'Shizuku permission check timed out';
+
+  @override
+  String get nativeRequiresConnectionToShizukuAndPermissions =>
+      'A Shizuku connection and permission are required';
+
+  @override
+  String get nativePermissionDeniedToShizuku => 'Shizuku permission was denied';
+
+  @override
+  String get nativePleaseInstallShizuku => 'Please install Shizuku';
+
+  @override
+  String get nativePleaseStartShizuku => 'Please start Shizuku';
+
+  @override
+  String get nativeRemoveThisResolution => 'Delete this resolution';
+
+  @override
+  String get nativeNoAppSelected => 'No app selected';
+
+  @override
+  String get nativeCouldNotStartApp => 'Could not start app';
+
+  @override
+  String get nativeAddCustomResolution => 'Add custom resolution';
+
+  @override
+  String get nativeRotate180 => 'Rotate 180°';
+
+  @override
+  String get nativeCast => 'Cast';
+
+  @override
+  String get nativeCastDescription => 'Choose a cast receiver';
+
+  @override
+  String get nativeNoCastDevices => 'No Google Cast devices are available';
+
+  @override
+  String get nativeCastUnavailable => 'Google Cast could not be initialized';
+
+  @override
+  String get nativeCasting => 'Casting';
+
+  @override
+  String get nativeStopCasting => 'Stop casting';
+
+  @override
+  String get nativeScanAgain => 'Scan again';
+
+  @override
+  String get nativeScanning => 'Scanning…';
+
+  @override
+  String get nativeCursor => 'Cursor';
+
+  @override
+  String get nativeTap => 'Tap';
+
+  @override
+  String get nativeTapToExit => 'Tap to exit';
+
+  @override
+  String get nativeTapToOpen => 'Tap to open';
+
+  @override
+  String get nativeYouCanRearrangeTheLayoutInThe =>
+      'You can rearrange the layout in the control panel by long-pressing the button.';
+
+  @override
+  String get nativeWorkSpace => 'Workspace';
+
+  @override
+  String get nativeExpandWorkspace => 'Expand workspace';
+
+  @override
+  String get nativeTemporarilyReturnToAndroid =>
+      'Temporarily return to Android';
+
+  @override
+  String get nativeLaptopMode => 'Laptop mode';
+
+  @override
+  String get nativeLaptopModeDescription =>
+      'Show a keyboard and trackpad on the lower half of a foldable device.';
+
+  @override
+  String get nativeKeyboardStyle => 'Style';
+
+  @override
+  String get nativeBlackBerryMode => 'BlackBerry mode';
+
+  @override
+  String get nativeBlackBerryLayout => 'BlackBerry layout';
+
+  @override
+  String get nativeAutomaticLayout => 'Automatic layout';
+
+  @override
+  String get nativeManualHeight => 'Manual height';
+
+  @override
+  String get nativeKeyboardHeight => 'Keyboard height';
+
+  @override
+  String get nativeBlackBerryModeDescription =>
+      'Show a compact phone keyboard without a trackpad.';
+
+  @override
+  String get nativeVirtualGamepad => 'Virtual Gamepad';
+
+  @override
+  String get nativeVirtualGamepadDescription =>
+      'Show a virtual gamepad with ABXY, sticks, triggers, and system buttons.';
+
+  @override
+  String get nativeGamepadLayout => 'Gamepad layout';
+
+  @override
+  String get nativeGameBoyStyle => 'Game Boy style';
+
+  @override
+  String get nativeGameBoyStyleDescription =>
+      'Show a Game Boy-inspired D-pad, A/B, and SELECT/START.';
+
+  @override
+  String get nativeOk => 'OK';
+
+  @override
+  String get nativeCancel => 'Cancel';
+
+  @override
+  String get nativeKeyboardSettings => 'Keyboard settings';
+
+  @override
+  String get nativeKeyboardSettingsDescription =>
+      'Customize the appearance of the laptop keyboard';
+
+  @override
+  String get nativeTheme => 'Theme';
+
+  @override
+  String get nativeSwipeLanguage => 'Swipe typing language';
+
+  @override
+  String get nativeSwipeLanguageDescription =>
+      'Tap typing continues to use your current IME';
+
+  @override
+  String get nativeKeyboardThemeStandard => 'Standard';
+
+  @override
+  String get nativeKeyboardThemeCrimson => 'Crimson';
+
+  @override
+  String get nativeKeyboardThemeCloud => 'Cloud Pop';
+
+  @override
+  String get nativeKeyboardThemeAmoled => 'AMOLED';
+
+  @override
+  String get nativeKeyboardThemeStandardDescription => 'Neutral dark keyboard';
+
+  @override
+  String get nativeKeyboardThemeCrimsonDescription =>
+      'Warm crimson inspired by foldable PCs';
+
+  @override
+  String get nativeKeyboardThemeCloudDescription => 'Soft cloud blue keyboard';
+
+  @override
+  String get nativeKeyboardThemeAmoledDescription =>
+      'True-black power-saving keyboard';
+
+  @override
+  String get nativeKeyboardThemeCustomDescription => 'Custom keyboard theme';
+
+  @override
+  String get nativeOpenDextopWithYourSavedAppPlacement =>
+      'Open Dextop with your saved app placement';
+
+  @override
+  String get nativeSaveAndApply => 'Save and apply';
+
+  @override
+  String get nativeFailedToSaveUnableToRetrieveRunning =>
+      'Failed to save: Unable to retrieve running apps on Dextop.';
+
+  @override
+  String get nativeFailedToSaveFailedToWriteTo =>
+      'Failed to save: Failed to write to device storage.';
+
+  @override
+  String get nativeViewSavedWorkspacesAndSaveCurrentArrangement =>
+      'View saved workspaces and save current arrangement';
+
+  @override
+  String get nativeNoSavedWorkspaces => 'No saved workspaces';
+
+  @override
+  String get nativePleaseStartDextopFirst => 'Please start Dextop first';
+
+  @override
+  String get nativeReconnect => 'Reconnect';
+
+  @override
+  String get nativeWidth => 'Width';
+
+  @override
+  String get nativeReturn => 'Back';
+
+  @override
+  String get nativePermissionRequestInProgress =>
+      'Permission request in progress';
+
+  @override
+  String get nativeHorizontalHolding => 'Landscape';
+
+  @override
+  String get nativeSaveTheCurrentAppArrangementAsA =>
+      'Save the current app arrangement as a workspace';
+
+  @override
+  String get nativeAddCurrentAppPlacement => 'Add current app layout';
+
+  @override
+  String get nativeScreenBrightness => 'Screen brightness';
+
+  @override
+  String get nativeUseTheScreenAsATrackpadTo =>
+      'Use the screen as a trackpad to control the cursor';
+
+  @override
+  String get nativeEnd => 'End';
+
+  @override
+  String get nativeEdit => 'Edit';
+
+  @override
+  String get nativeVerticalHolding => 'Portrait';
+
+  @override
+  String get nativeReconnectIfYouHaveDisplayOrConnection =>
+      'Reconnect if you have display or connection problems';
+
+  @override
+  String get nativeDisplayProfileIsOutOfRange =>
+      'Display profile is out of range';
+
+  @override
+  String get nativeResolution => 'Resolution';
+
+  @override
+  String get nativeEditResolution => 'Edit resolution';
+
+  @override
+  String get nativeAddResolution => 'Add resolution';
+
+  @override
+  String get nativeSendsTheTouchedPositionDirectlyToDextop =>
+      'Sends the touched position directly to Dextop as a tap';
+
+  @override
+  String get nativeAddAndApply => 'Add and apply';
+
+  @override
+  String get nativeEditPlacement => 'Edit placement';
+
+  @override
+  String get nativeCompletePlacementEdit => 'Complete placement edit';
+
+  @override
+  String get nativeVolume => 'Volume';
+
+  @override
+  String get nativeHeight => 'Height';
+
+  @override
+  String get multiTouchUpgradeTitle => 'The app has been updated';
+
+  @override
+  String get multiTouchUpgradeBody =>
+      'Multi-touch is now supported, so the gestures have been updated.';
+
+  @override
+  String get multiTouchUpgradeLandscape =>
+      'Landscape\\nSwipe right with three fingers from the left edge';
+
+  @override
+  String get multiTouchUpgradePortrait =>
+      'Portrait\\nSwipe down with three fingers from the top edge';
+
+  @override
+  String get multiTouchUpgradeClose => 'Got it';
+
+  @override
+  String appUpdatedTitle(String version) {
+    return 'Updated to $version!';
+  }
+
+  @override
+  String get appUpdatedMessage =>
+      'Dextop has been updated to the latest version.';
+
+  @override
+  String get androidSwipeImeLabel => 'Input geser Dextop';
+
+  @override
+  String get androidAccessibilityServiceDescription =>
+      'Mengontrol layar virtual, input, dan panel kontrol Dextop';
+
+  @override
+  String get androidEmbeddedPairingChannel => 'Pengaturan akses bawaan';
+
+  @override
+  String get androidEmbeddedPairingTitle => 'Pasangkan Dextop';
+
+  @override
+  String get androidEmbeddedPairingNotificationText =>
+      'Masukkan kode enam digit yang ditampilkan di Debugging nirkabel';
+
+  @override
+  String get androidEmbeddedPairingCode => 'Kode pemasangan enam digit';
+
+  @override
+  String get androidEmbeddedPairingEnterCode => 'Masukkan kode pemasangan';
+
+  @override
+  String get androidEmbeddedPairingSuccess => 'Dextop terhubung';
+
+  @override
+  String get androidEmbeddedPairingSuccessMessage =>
+      'Pemasangan selesai. Kembali ke Dextop.';
+
+  @override
+  String get androidEmbeddedPairingFailed => 'Dextop tidak dapat terhubung';
+
+  @override
+  String get androidEmbeddedPairingInvalidCode => 'Masukkan kode enam digit';
+
+  @override
+  String get androidEmbeddedPairingSearching => 'Mencari layanan pemasangan';
+
+  @override
+  String get androidEmbeddedPairingServiceFound => 'Layanan pemasangan ditemukan';
+
+  @override
+  String get androidEmbeddedPairingServiceNotFound =>
+      'Layanan pemasangan tidak ditemukan';
+
+  @override
+  String get androidEmbeddedPairingRetry => 'Coba lagi';
+
+  @override
+  String get androidEmbeddedPairingInProgress => 'Pemasangan sedang berlangsung';
+
+  @override
+  String get windowManager => 'Window manager';
+
+  @override
+  String get windowManagerSystem => 'Built-in system desktop';
+
+  @override
+  String get windowManagerSystemDescription =>
+      'Uses Samsung DeX or Android desktop windowing as provided by the system';
+
+  @override
+  String get windowManagerPlasma => 'Dextop Plasma (own WM)';
+
+  @override
+  String get windowManagerPlasmaDescription =>
+      'Dextop draws a KDE Plasma 6 style desktop with its own panel, window decorations, tiling and virtual desktops';
+
+  @override
+  String get windowManagerPlasmaV2 => 'Dextop Plasma v2 (compositing WM)';
+
+  @override
+  String get windowManagerPlasmaV2Description =>
+      'Runs each app on its own virtual display and shows it inside a Breeze window drawn by Dextop, so dragging, resizing, animations and virtual desktops happen inside Dextop. The panel controls networks, audio and power.';
+
+  @override
+  String get windowManagerAppliedLive => 'Applied to the running desktop';
+
+  @override
+  String get plasmaSettingsTitle => 'Dextop Plasma settings';
+
+  @override
+  String get plasmaSettingsSummary =>
+      'Appearance, panel, virtual desktops and animations';
+
+  @override
+  String get plasmaHotCorner => 'Top-left hot corner';
+
+  @override
+  String get plasmaHotCornerDescription =>
+      'Moving the pointer into the top-left corner opens Overview';
+
+  @override
+  String get plasmaShortcutsTitle => 'Keyboard shortcuts';
+
+  @override
+  String get plasmaShortcutsBody =>
+      'Meta: Kickoff\nAlt+Space / Alt+F2: KRunner\nMeta+W: Overview\nAlt+Tab: Switch windows\nMeta+Arrows: Quick tile\nMeta+PgUp / PgDn: Maximize / Minimize\nMeta+D: Peek at desktop\nCtrl+F1–F4 / Meta+Ctrl+←→: Virtual desktops\nAlt+F3: Window operations menu\nAlt+F4: Close';
+
+  @override
+  String get nativePlasmaAccentColor => 'Accent color';
+
+  @override
+  String get nativePlasmaAddToFavorites => 'Add to Favorites';
+
+  @override
+  String get nativePlasmaAllApplications => 'All Applications';
+
+  @override
+  String get nativePlasmaAllDesktops => 'All Desktops';
+
+  @override
+  String get nativePlasmaAnimationSpeed => 'Animation speed';
+
+  @override
+  String get nativePlasmaAppInfo => 'App Info';
+
+  @override
+  String get nativePlasmaApplication => 'Application';
+
+  @override
+  String get nativePlasmaApplications => 'Applications';
+
+  @override
+  String get nativePlasmaAudioVolume => 'Audio Volume';
+
+  @override
+  String get nativePlasmaCalculatorCopy => 'Calculator — click to copy';
+
+  @override
+  String get nativePlasmaCategoryGames => 'Games';
+
+  @override
+  String get nativePlasmaCategoryGraphics => 'Graphics';
+
+  @override
+  String get nativePlasmaCategoryInternet => 'Internet';
+
+  @override
+  String get nativePlasmaCategoryLost => 'Lost & Found';
+
+  @override
+  String get nativePlasmaCategoryMultimedia => 'Multimedia';
+
+  @override
+  String get nativePlasmaCategoryNews => 'News';
+
+  @override
+  String get nativePlasmaCategoryOffice => 'Office';
+
+  @override
+  String get nativePlasmaCategorySystem => 'System';
+
+  @override
+  String get nativePlasmaCategoryTravel => 'Maps & Travel';
+
+  @override
+  String get nativePlasmaCategoryVideo => 'Video';
+
+  @override
+  String get nativePlasmaCharging => 'Charging';
+
+  @override
+  String get nativePlasmaClose => 'Close';
+
+  @override
+  String get nativePlasmaCloseAll => 'Close All';
+
+  @override
+  String get nativePlasmaColorScheme => 'Color scheme';
+
+  @override
+  String get nativePlasmaComputer => 'Computer';
+
+  @override
+  String get nativePlasmaConfigureAudio => 'Configure Audio Devices…';
+
+  @override
+  String get nativePlasmaConfigureDesktop => 'Configure Desktop and Wallpaper…';
+
+  @override
+  String get nativePlasmaConfigureNetwork => 'Configure Network Connections…';
+
+  @override
+  String get nativePlasmaConfigurePower => 'Configure Power Management…';
+
+  @override
+  String get nativePlasmaConnected => 'Connected';
+
+  @override
+  String get nativePlasmaDesktop => 'Desktop';
+
+  @override
+  String get nativePlasmaDesktopN => 'Desktop %1\$d';
+
+  @override
+  String get nativePlasmaDeviceSpeaker => 'Device speaker';
+
+  @override
+  String get nativePlasmaDextopSettings => 'Dextop Settings';
+
+  @override
+  String get nativePlasmaDischarging => 'Discharging';
+
+  @override
+  String get nativePlasmaDisconnected => 'Disconnected';
+
+  @override
+  String get nativePlasmaDocked => 'Docked';
+
+  @override
+  String get nativePlasmaFavorites => 'Favorites';
+
+  @override
+  String get nativePlasmaFloating => 'Floating';
+
+  @override
+  String get nativePlasmaFollowSystem => 'Follow system';
+
+  @override
+  String get nativePlasmaInstant => 'Instant';
+
+  @override
+  String get nativePlasmaKrunnerHint => 'Search…';
+
+  @override
+  String get nativePlasmaLeave => 'Leave…';
+
+  @override
+  String get nativePlasmaLogOut => 'Log Out';
+
+  @override
+  String get nativePlasmaLoggingOutIn => 'Logging out in %1\$d seconds';
+
+  @override
+  String get nativePlasmaMaximize => 'Maximize';
+
+  @override
+  String get nativePlasmaMinimize => 'Minimize';
+
+  @override
+  String get nativePlasmaMobileData => 'Mobile data';
+
+  @override
+  String get nativePlasmaMoveToDesktopN => 'Move to Desktop %1\$d';
+
+  @override
+  String get nativePlasmaNetworks => 'Networks';
+
+  @override
+  String get nativePlasmaNewInstance => 'Start New Instance';
+
+  @override
+  String get nativePlasmaNoActiveNetwork => 'No active network';
+
+  @override
+  String get nativePlasmaNoFavorites =>
+      'No favorites yet. Right-click an application to add one.';
+
+  @override
+  String get nativePlasmaNoMatches => 'No matches';
+
+  @override
+  String get nativePlasmaNoWindows => 'No windows on this desktop';
+
+  @override
+  String get nativePlasmaNothingHere => 'Nothing here';
+
+  @override
+  String get nativePlasmaOpen => 'Open';
+
+  @override
+  String get nativePlasmaOverview => 'Overview';
+
+  @override
+  String get nativePlasmaOverviewSearch => 'Type to search…';
+
+  @override
+  String get nativePlasmaPanel => 'Panel';
+
+  @override
+  String get nativePlasmaPeekAtDesktop => 'Peek at Desktop';
+
+  @override
+  String get nativePlasmaPinToTaskManager => 'Pin to Task Manager';
+
+  @override
+  String get nativePlasmaPlaces => 'Places';
+
+  @override
+  String get nativePlasmaPowerAndBattery => 'Power and Battery';
+
+  @override
+  String get nativePlasmaRecentApplications => 'Recent Applications';
+
+  @override
+  String get nativePlasmaRemoveFromFavorites => 'Remove from Favorites';
+
+  @override
+  String get nativePlasmaRestart => 'Restart';
+
+  @override
+  String get nativePlasmaRestartingIn => 'Restarting in %1\$d seconds';
+
+  @override
+  String get nativePlasmaRestore => 'Restore';
+
+  @override
+  String get nativePlasmaRunCommand => 'Run Command (KRunner)';
+
+  @override
+  String get nativePlasmaSearch => 'Search…';
+
+  @override
+  String get nativePlasmaShutDown => 'Shut Down';
+
+  @override
+  String get nativePlasmaShuttingDownIn =>
+      'Shutting down Dextop in %1\$d seconds';
+
+  @override
+  String get nativePlasmaSleep => 'Sleep';
+
+  @override
+  String get nativePlasmaSleepingIn => 'Sleeping in %1\$d seconds';
+
+  @override
+  String get nativePlasmaStatusAndNotifications => 'Status and Notifications';
+
+  @override
+  String get nativePlasmaStopPeeking => 'Stop Peeking at Desktop';
+
+  @override
+  String get nativePlasmaSystemSettings => 'System Settings';
+
+  @override
+  String get nativePlasmaTileLeft => 'Quick Tile Left';
+
+  @override
+  String get nativePlasmaTileRight => 'Quick Tile Right';
+
+  @override
+  String get nativePlasmaUnpinFromTaskManager => 'Unpin from Task Manager';
+
+  @override
+  String get nativePlasmaVirtualDesktops => 'Virtual desktops';
+
+  @override
+  String get nativePlasmaWallpaper => 'Wallpaper';
+
+  @override
+  String get nativePlasmaWallpaperAndroid => 'Android wallpaper';
+
+  @override
+  String get nativePlasmaWallpaperPlasma => 'Plasma';
+
+  @override
+  String get nativePlasmaBreezeDark => 'Breeze Dark';
+
+  @override
+  String get nativePlasmaBreezeLight => 'Breeze Light';
+
+  @override
+  String get nativePlasmaAirplaneMode => 'Airplane mode';
+
+  @override
+  String get nativePlasmaBluetooth => 'Bluetooth';
+
+  @override
+  String get nativePlasmaOn => 'On';
+
+  @override
+  String get nativePlasmaOff => 'Off';
+
+  @override
+  String get nativePlasmaCurrentConnection => 'Current connection';
+
+  @override
+  String get nativePlasmaAvailableNetworks => 'Available networks';
+
+  @override
+  String get nativePlasmaNoInternet => 'No internet access';
+
+  @override
+  String get nativePlasmaWifiIsOff => 'Wi-Fi is off';
+
+  @override
+  String get nativePlasmaScanning => 'Scanning…';
+
+  @override
+  String get nativePlasmaNoNetworksFound => 'No networks found';
+
+  @override
+  String get nativePlasmaSavedNetwork => 'Saved';
+
+  @override
+  String get nativePlasmaSecuredNetwork => 'Secured';
+
+  @override
+  String get nativePlasmaOpenNetwork => 'Open';
+
+  @override
+  String get nativePlasmaPassword => 'Password';
+
+  @override
+  String get nativePlasmaConnect => 'Connect';
+
+  @override
+  String get nativePlasmaCancel => 'Cancel';
+
+  @override
+  String get nativePlasmaConnectingTo => 'Connecting to %1\$s…';
+
+  @override
+  String get nativePlasmaConnectionFailed => 'Could not connect';
+
+  @override
+  String get nativePlasmaUnavailable => 'Not available on this device';
+
+  @override
+  String get nativePlasmaVolume => 'Volume';
+
+  @override
+  String get nativePlasmaMediaVolume => 'Media';
+
+  @override
+  String get nativePlasmaRingVolume => 'Ring';
+
+  @override
+  String get nativePlasmaNotificationVolume => 'Notifications';
+
+  @override
+  String get nativePlasmaAlarmVolume => 'Alarm';
+
+  @override
+  String get nativePlasmaNothingPlaying => 'Nothing playing';
+
+  @override
+  String get nativePlasmaOutputDevice => 'Output device';
+
+  @override
+  String get nativePlasmaHeadphones => 'Headphones';
+
+  @override
+  String get nativePlasmaExternalOutput => 'External output';
+
+  @override
+  String get nativePlasmaBatterySaver => 'Battery saver';
+
+  @override
+  String get nativePlasmaAutoBrightness => 'Auto brightness';
+
+  @override
+  String get nativePlasmaScreenBrightness => 'Screen brightness';
+
+  @override
+  String get nativePlasmaFullyCharged => 'Fully charged';
+
+  @override
+  String get nativePlasmaPowerSourceAc => 'AC power';
+
+  @override
+  String get nativePlasmaPowerSourceWireless => 'Wireless';
+
+  @override
+  String get nativePlasmaPowerSourceDock => 'Dock';
+
+  @override
+  String get nativePlasmaTimeUntilFull => '%1\$s until full';
+
+  @override
+  String get nativePlasmaHoursMinutes => '%1\$d h %2\$d min';
+
+  @override
+  String get nativePlasmaMinutes => '%1\$d min';
+
+  @override
+  String get nativePlasmaApplying => 'Applying…';
+
+  @override
+  String get linuxDescription =>
+      'Run Linux (Debian, Ubuntu, Arch Linux ARM) without root and open its apps as Plasma windows.';
+
+  @override
+  String get linuxUnsupportedDevice => 'Linux requires an arm64 device.';
+
+  @override
+  String get linuxRequiresPlasma =>
+      'Linux is available only with Dextop Plasma v2.';
+
+  @override
+  String get linuxSwitchToPlasma => 'Switch to Plasma v2';
+
+  @override
+  String get linuxRequiresPrivilege =>
+      'Linux uses Dextop’s built-in access service. Connect it with Set up Dextop access. External Stellar or Shizuku apps are optional.';
+
+  @override
+  String get linuxEnable => 'Enable Linux';
+
+  @override
+  String get linuxEnableDescription =>
+      'Create and manage containers and open Linux apps from Plasma';
+
+  @override
+  String get linuxNoContainers =>
+      'No containers yet. Use Add container to create one.';
+
+  @override
+  String get linuxAddContainer => 'Add container';
+
+  @override
+  String get linuxContainerName => 'Name';
+
+  @override
+  String get linuxDistribution => 'Distribution';
+
+  @override
+  String get linuxStorageNote =>
+      'Containers are stored in /data/local/tmp/dextop/linux and remain after Dextop is uninstalled. Delete them here when no longer needed.';
+
+  @override
+  String get linuxInstall => 'Install';
+
+  @override
+  String get linuxCancel => 'Cancel';
+
+  @override
+  String get linuxDelete => 'Delete';
+
+  @override
+  String linuxDeleteConfirm(String name) {
+    return 'Delete “$name” and all of its files?';
+  }
+
+  @override
+  String get linuxRepair => 'Repair';
+
+  @override
+  String get linuxShowLog => 'Show log';
+
+  @override
+  String get linuxRunCommand => 'Run command';
+
+  @override
+  String get linuxRun => 'Run';
+
+  @override
+  String get linuxStateInstalling => 'Installing';
+
+  @override
+  String get linuxStateInstalled => 'Installed';
+
+  @override
+  String get linuxStateFailed => 'Failed';
+
+  @override
+  String get linuxPhaseDownload => 'Downloading';
+
+  @override
+  String get linuxPhaseVerify => 'Verifying';
+
+  @override
+  String get linuxPhaseExtract => 'Extracting';
+
+  @override
+  String get linuxPhaseConfigure => 'Configuring';
+
+  @override
+  String get linuxPhaseProvision => 'Installing required packages';
+
+  @override
+  String get linuxOpenDesktop => 'Open desktop';
+
+  @override
+  String get linuxStartPlasmaFirst => 'Start Dextop with Plasma v2 first.';
+
+  @override
+  String get nativePlasmaShowKeyboard => 'Show Keyboard';
+
+  @override
+  String get nativeLinuxDesktopConnecting => 'Connecting to the Linux service…';
+
+  @override
+  String get nativeLinuxDesktopStartingContainer =>
+      'Starting the container and display…';
+
+  @override
+  String get nativeLinuxDesktopStartingWm => 'Starting the window manager…';
+
+  @override
+  String get nativePlasmaCategoryLinux => 'Linux';
+
+  @override
+  String get linuxPhasePrepare => 'Fetching image information';
+
+  @override
+  String get linuxPhaseRefresh => 'Updating package lists';
+
+  @override
+  String get linuxPhaseFinish => 'Finishing';
+
+  @override
+  String linuxPhaseStep(int step, int total) {
+    return 'Step $step of $total';
+  }
+
+  @override
+  String get linuxSetupTitle => 'Linux setup';
+
+  @override
+  String get linuxSetupIntro =>
+      'Create a Linux workspace that suits you. Choose a desktop, language, input method and applications.';
+
+  @override
+  String get linuxSetupExisting =>
+      'Add features to this Linux environment. Existing files and applications are kept. Reopen the desktop after setup to apply the settings.';
+
+  @override
+  String get linuxSetupSystem => 'Your Linux environment';
+
+  @override
+  String get linuxSetupDesktop => 'Make it your desktop';
+
+  @override
+  String get linuxSetupLanguage => 'Language and fonts';
+
+  @override
+  String get linuxSetupInput => 'Typing in your language';
+
+  @override
+  String get linuxSetupApps => 'Choose your applications';
+
+  @override
+  String get linuxSetupReview => 'Ready to set up';
+
+  @override
+  String get linuxSetupProgress => 'Preparing your workspace';
+
+  @override
+  String get linuxSetupDone => 'Your Linux workspace is ready';
+
+  @override
+  String get linuxSetupDoneDetail =>
+      'Open the desktop from the Linux tab, or launch individual Linux apps from Plasma. For Fcitx 5, use Ctrl+Space to switch input methods.';
+
+  @override
+  String get linuxSetupNext => 'Continue';
+
+  @override
+  String get linuxSetupBack => 'Back';
+
+  @override
+  String get linuxSetupApply => 'Start setup';
+
+  @override
+  String get linuxSetupCustomize => 'Set up / add features';
+
+  @override
+  String get linuxSetupMinimal => 'Minimal IceWM';
+
+  @override
+  String get linuxSetupMinimalDetail =>
+      'A lightweight desktop with Xvfb, IceWM and a terminal. Choose any extras in the following steps.';
+
+  @override
+  String get linuxSetupComplete => 'Everyday IceWM';
+
+  @override
+  String get linuxSetupCompleteDetail =>
+      'Starts with themes, icons, Mesa software rendering, a file manager and a text editor selected. You can adjust each choice.';
+
+  @override
+  String get linuxSetupThemes => 'Themes and icons';
+
+  @override
+  String get linuxSetupThemesDetail =>
+      'IceWM themes and Adwaita styling for GTK apps.';
+
+  @override
+  String get linuxSetupGraphics => 'Mesa graphics support';
+
+  @override
+  String get linuxSetupGraphicsDetail =>
+      'Install OpenGL / EGL libraries and software rendering. This Xvfb desktop does not provide hardware GPU acceleration.';
+
+  @override
+  String get linuxSetupLocale => 'Linux display language';
+
+  @override
+  String get linuxSetupLocaleDetail =>
+      'Generate the selected UTF-8 locale and apply it to the desktop and apps that support it.';
+
+  @override
+  String get linuxSetupFonts => 'Japanese, Chinese and Korean fonts';
+
+  @override
+  String get linuxSetupFontsDetail =>
+      'Install Noto CJK fonts. Noto general-purpose and emoji fonts are included with every setup.';
+
+  @override
+  String get linuxSetupNoIme => 'Use the Android keyboard only';
+
+  @override
+  String get linuxSetupNoImeDetail =>
+      'Do not start a Linux input method. The Android keyboard remains available in Plasma.';
+
+  @override
+  String get linuxSetupImeDetail =>
+      'Fcitx 5 starts with the Linux session, including GTK / Qt integration. Input methods with CJK text also install CJK fonts.';
+
+  @override
+  String get linuxSetupMozc => 'Japanese — Mozc';
+
+  @override
+  String get linuxSetupPinyin => 'Chinese — Pinyin';
+
+  @override
+  String get linuxSetupHangul => 'Korean — Hangul';
+
+  @override
+  String get linuxSetupFirefoxDetail =>
+      'Firefox ESR on Debian; Firefox on Arch.';
+
+  @override
+  String get linuxSetupChromeDetail =>
+      'Official Google Chrome for ARM64, downloaded from Google. Available on Debian and Ubuntu.';
+
+  @override
+  String get linuxSetupChromiumDetail =>
+      'Open-source Chromium from the distribution repository.';
+
+  @override
+  String get linuxSetupSnapUnavailable =>
+      'Unavailable on this Ubuntu image: this package requires Snap. Choose Debian / Arch, or select Google Chrome.';
+
+  @override
+  String get linuxSetupChromeUnavailable =>
+      'The official installer is available here for Debian and Ubuntu.';
+
+  @override
+  String get linuxSetupBrowserNote =>
+      'Browsers use PRoot-compatible launchers with their sandbox disabled. Install only browsers you want to use in this environment.';
+
+  @override
+  String get linuxSetupFiles => 'File manager';
+
+  @override
+  String get linuxSetupFilesDetail =>
+      'PCManFM — browse folders and manage files.';
+
+  @override
+  String get linuxSetupEditor => 'Text editor';
+
+  @override
+  String get linuxSetupEditorDetail =>
+      'Mousepad — a lightweight graphical editor.';
+
+  @override
+  String get linuxSetupOffice => 'Office suite';
+
+  @override
+  String get linuxSetupOfficeDetail =>
+      'LibreOffice — documents, spreadsheets and presentations. Requires a larger download and more storage.';
+
+  @override
+  String get linuxSetupSteamDetail =>
+      'Valve\'s Steam (ARM64). Fetched from Valve at first use; Steam installs Proton and FEX itself.';
+
+  @override
+  String get linuxSetupDroidDeckNote =>
+      'DroidDeck\'s runtime ships its own KDE Plasma desktop (KWin, Xwayland), fonts and input methods, so the IceWM, language and input steps are skipped.';
+
+  @override
+  String get linuxSetupStorage =>
+      'Keep several GB of free storage available. Downloads and installation size depend on the distribution and selected apps. Installation continues if you leave this screen.';
+
+  @override
+  String get linuxSetupAdditive =>
+      'Unselected apps are not removed. Setup adds selected packages and updates the language and session settings.';
+
+  @override
+  String get linuxSetupNothingExtra => 'No optional applications';
+
+  @override
+  String get linuxSetupRetry => 'Review and retry';
+
+  @override
+  String get linuxSetupBackground => 'Continue in background';
+
+  @override
+  String get linuxSetupLog => 'Installation details';
+
+  @override
+  String get linuxSetupFailed => 'Setup could not finish';
+
+  @override
+  String get linuxSetupPhaseLanguage => 'Setting up language and fonts';
+
+  @override
+  String get linuxSetupPhaseInput => 'Installing the input method';
+
+  @override
+  String get linuxSetupPhaseDesktop => 'Setting up themes and icons';
+
+  @override
+  String get linuxSetupPhaseGraphics => 'Installing graphics libraries';
+
+  @override
+  String get linuxSetupPhaseApps => 'Installing your applications';
+
+  @override
+  String get linuxSetupPhaseIntegration => 'Connecting apps to the desktop';
+
+  @override
+  String get linuxRuntimeStarting => 'Starting Linux…';
+
+  @override
+  String get linuxRuntimeRunning => 'Linux is running';
+
+  @override
+  String get linuxRuntimeStopped => 'Linux is stopped';
+
+  @override
+  String get linuxSessionReset => 'Reset session';
+
+  @override
+  String get linuxForceStop => 'Force stop PRoot';
+
+  @override
+  String get linuxForceStopConfirm =>
+      'Stop all Linux processes for this environment? Unsaved work will be lost. Installed applications and files are kept.';
+
+  @override
+  String get linuxSettingsTitle => 'Linux settings';
+
+  @override
+  String get linuxSettingsEntry =>
+      'Graphics and other settings shared by all containers';
+
+  @override
+  String get linuxGpuSection => 'Graphics acceleration';
+
+  @override
+  String get linuxGpuHardware => 'Hardware (VirGL)';
+
+  @override
+  String get linuxGpuHardwareDescription =>
+      'OpenGL is drawn by the device\'s GPU. 3D apps, games and browsers run faster.';
+
+  @override
+  String get linuxGpuSoftware => 'Software (llvmpipe)';
+
+  @override
+  String get linuxGpuSoftwareDescription =>
+      'Drawn by the CPU. Slower, but correct for apps that render wrongly on the GPU.';
+
+  @override
+  String get linuxGpuUnavailable => 'VirGL is not available on this device.';
+
+  @override
+  String get linuxGpuApplyNote =>
+      'Changes apply to apps started from now on. Reopen any open desktop.';
+
+  @override
+  String get linuxContainerSettings => 'Container settings';
+
+  @override
+  String get linuxGpuFollowDefault => 'Use the default';
+
+  @override
+  String get linuxGpuFollowDefaultDescription =>
+      'Uses the default graphics from the Linux settings';
+
+  @override
+  String get linuxDefaultSection => 'Defaults';
+
+  @override
+  String get linuxDefaultContainer => 'Default container';
+
+  @override
+  String get linuxDefaultContainerDescription =>
+      'The container whose apps the Plasma launcher shows';
+
+  @override
+  String get linuxDefaultContainerAll => 'All containers';
+
+  @override
+  String get linuxDefaultBadge => 'Default';
+
+  @override
+  String get linuxGpuDefaultSection => 'Default graphics acceleration';
+
+  @override
+  String get linuxGpuDefaultNote =>
+      'Used by containers whose own settings do not change it.';
+
+  @override
+  String get linuxWmSection => 'Window manager';
+
+  @override
+  String get linuxWmDefault => 'Default';
+
+  @override
+  String get linuxWmDefaultDescription =>
+      'Follows the container type (DroidDeck for the DroidDeck runtime, Dextop otherwise)';
+
+  @override
+  String get linuxWmDextopDescription =>
+      'Xvfb with Dextop\'s window management: a window per app and an IceWM desktop';
+
+  @override
+  String get linuxWmDroidDeckDescription =>
+      'DroidDeck\'s layout: KDE Plasma (KWin) nested in a Wayland compositor, Xwayland for X apps and gamescope for GPU apps. Needs the DroidDeck runtime';
+
+  @override
+  String linuxGpuRunning(int count) {
+    return 'VirGL in use by $count container(s)';
+  }
+
+  @override
+  String get nativePlasmaNotifications => 'Notifications';
+
+  @override
+  String get nativePlasmaNoNotifications => 'No notifications';
+
+  @override
+  String get nativePlasmaClearAll => 'Clear all';
+
+  @override
+  String get linuxGpuTurnip => 'Turnip + Zink (recommended)';
+
+  @override
+  String get linuxGpuTurnipDescription =>
+      'Linux apps use the Adreno GPU directly (Vulkan and OpenGL 4.6). Fastest, and suited to games.';
+
+  @override
+  String get linuxGpuTurnipSetup =>
+      'Turn on 3D graphics in the container setup to use it (the build takes about 30 minutes). Until then VirGL is used.';
+
+  @override
+  String get linuxSetupPhaseGpu => 'Building the GPU driver (Turnip)';
+
+  @override
+  String get linuxSetupDisplayBackend => 'Display system';
+
+  @override
+  String get linuxSetupXvfbDetail =>
+      'Use X11 for applications and the IceWM desktop.';
+
+  @override
+  String get linuxSetupWaylandDetail =>
+      'Use Wayland for supported applications and Xwayland for X11 applications and the IceWM desktop.';
+
+  @override
+  String get nativeSteamModeTitle => 'Steam Deck Mode';
+
+  @override
+  String get nativeSteamModeStarting => 'Starting…';
+
+  @override
+  String get nativeSteamModeStepDisplay => 'Preparing the display…';
+
+  @override
+  String get nativeSteamModeStepClient => 'Checking the Steam client…';
+
+  @override
+  String get nativeSteamModeStepDownload => 'Downloading Steam · %1\$s';
+
+  @override
+  String get nativeSteamModeStepRepair => 'Repairing the Steam client…';
+
+  @override
+  String get nativeSteamModeStepUpdate =>
+      'Downloading the Steam update · %1\$d%%';
+
+  @override
+  String get nativeSteamModeStepServices => 'Starting system services…';
+
+  @override
+  String get nativeSteamModeStepSteam => 'Starting Steam…';
+
+  @override
+  String get nativeSteamModeStepStopping => 'Shutting down…';
+
+  @override
+  String get nativeSteamModeElapsed => '%1\$d:%2\$02d elapsed';
+
+  @override
+  String get nativeSteamModeHint1 =>
+      'The first start downloads Steam. This takes a few minutes.';
+
+  @override
+  String get nativeSteamModeHint2 =>
+      'Shut Down in the power menu ends Steam Deck Mode.';
+
+  @override
+  String get nativeSteamModeHint3 =>
+      'Start games from your Steam library. Proton is set up automatically.';
+
+  @override
+  String get nativeSteamModeFailed => 'Steam Deck Mode ended';
+
+  @override
+  String get nativeSteamModeRestart => 'Restart';
+
+  @override
+  String get nativeSteamModeClose => 'Close';
+
+  @override
+  String get uiShortcutAdd => 'Add home screen shortcut';
+
+  @override
+  String get uiShortcutUnsupported =>
+      'This launcher does not support pinned shortcuts. Long-press the Dextop app icon and choose “Start Dextop”.';
+
+  @override
+  String uiShortcutFailed(String error) {
+    return 'Could not add the shortcut: \$error';
+  }
+
+  @override
+  String get uiShortcutDismissed => 'Shortcut not added';
+
+  @override
+  String get uiShortcutAdded =>
+      'Added to the home screen. Tap it to start or stop the Dextop virtual display.';
+
+  @override
+  String get nativeShortcutStartDisplayLong =>
+      'Mulai atau hentikan layar virtual Dextop';
+
+  @override
+  String get nativeShortcutStartDisplay => 'Mulai Dextop';
+}
