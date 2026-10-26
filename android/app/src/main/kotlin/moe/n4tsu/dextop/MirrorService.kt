@@ -3793,13 +3793,13 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 setOnClickListener { action() }
             }, LinearLayout.LayoutParams(dp(width), dp(30)))
         }
-        headerAction("−", 28) {
-            val scale = (prefs.getFloat("button_scale", 1f) - .1f).coerceIn(.55f, 1.6f)
+        headerAction("−", 32) {
+            val scale = (prefs.getFloat("button_scale", 1f) - .15f).coerceIn(.55f, 2.2f)
             prefs.edit().putFloat("button_scale", scale).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
-        headerAction("+", 28) {
-            val scale = (prefs.getFloat("button_scale", 1f) + .1f).coerceIn(.55f, 1.6f)
+        headerAction("+", 38) {
+            val scale = (prefs.getFloat("button_scale", 1f) + .15f).coerceIn(.55f, 2.2f)
             prefs.edit().putFloat("button_scale", scale).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
@@ -3823,21 +3823,22 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             // into the narrow right-hand gamepad panel.
             val specs = listOf(
                 // Default two-column layout keeps every control separated even on a narrow gamepad panel.
-                SkillSpec("FIRE ALL", "❄", Color.rgb(90,180,229), 34, .25f, .10f, .13f, .84f),
-                SkillSpec("REGEN", "✚", Color.rgb(108,224,108), 34, .75f, .10f, .29f, .84f),
-                SkillSpec("FLICKER", "⚡", Color.rgb(255,204,0), 36, .25f, .29f, .45f, .84f),
-                SkillSpec("BUFF", "◆", Color.rgb(102,179,255), 36, .75f, .29f, .62f, .82f),
-                SkillSpec("S1", "▲", Color.rgb(255,157,0), 36, .25f, .48f, .55f, .72f),
-                SkillSpec("S2", "◆", Color.rgb(0,229,255), 36, .75f, .48f, .72f, .62f),
-                SkillSpec("S3", "✦", Color.rgb(196,110,255), 44, .25f, .70f, .84f, .80f),
-                SkillSpec("CC", "✦", Color.rgb(163,102,255), 32, .75f, .70f, .72f, .42f),
-                SkillSpec("CONCEAL", "◉", Color.rgb(77,255,234), 32, .25f, .90f, .91f, .43f),
-                SkillSpec("ATTACK", "⚔", Color.rgb(153,204,255), 48, .75f, .90f, .94f, .88f)
+                SkillSpec("FIRE ALL", "❄", Color.rgb(90,180,229), 38, .18f, .12f, .13f, .84f),
+                SkillSpec("REGEN", "✚", Color.rgb(108,224,108), 38, .66f, .12f, .29f, .84f),
+                SkillSpec("FLICKER", "⚡", Color.rgb(255,204,0), 40, .20f, .35f, .45f, .84f),
+                SkillSpec("BUFF", "◆", Color.rgb(102,179,255), 42, .68f, .35f, .62f, .82f),
+                SkillSpec("S1", "▲", Color.rgb(255,157,0), 42, .17f, .58f, .55f, .72f),
+                SkillSpec("S2", "◆", Color.rgb(0,229,255), 42, .65f, .58f, .72f, .62f),
+                SkillSpec("S3", "✦", Color.rgb(196,110,255), 50, .28f, .82f, .84f, .80f),
+                SkillSpec("CC", "✦", Color.rgb(163,102,255), 36, .76f, .59f, .72f, .42f),
+                SkillSpec("CONCEAL", "◉", Color.rgb(77,255,234), 36, .78f, .13f, .91f, .43f),
+                SkillSpec("ATTACK", "⚔", Color.rgb(153,204,255), 54, .72f, .84f, .94f, .88f)
             )
             specs.forEach { spec ->
                 val key = spec.label.replace(" ", "_")
                 val scale = prefs.getFloat("button_scale", 1f).coerceIn(.55f, 1.6f)
-                val size = (dp(spec.sizeDp) * scale).roundToInt().coerceAtMost((layer.width / 2.6f).roundToInt().coerceAtLeast(dp(30)))
+                val maxSize = (layer.width * .44f).roundToInt().coerceAtLeast(dp(30))
+                val size = (dp(spec.sizeDp) * scale).roundToInt().coerceIn(dp(28), maxSize)
                 val deckX = prefs.getFloat("${key}_deck_x", spec.x).coerceIn(0f, 1f)
                 val deckY = prefs.getFloat("${key}_deck_y", spec.y).coerceIn(0f, 1f)
                 val targetX = prefs.getFloat("${key}_x", spec.targetX).coerceIn(0f, 1f)
@@ -3940,7 +3941,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 }, FrameLayout.LayoutParams(-1, dp(14), Gravity.BOTTOM))
                 val holderHeight = size + dp(14)
                 val x = (deckX * layer.width).roundToInt() - size / 2
-                val y = (deckY * layer.height).roundToInt() - size / 2
+                val y = (deckY * layer.height).roundToInt() - (size + dp(14)) / 2
                 layer.addView(holder, FrameLayout.LayoutParams(size, holderHeight).apply {
                     leftMargin = x.coerceIn(0, (layer.width - size).coerceAtLeast(0))
                     topMargin = y.coerceIn(0, (layer.height - holderHeight).coerceAtLeast(0))
