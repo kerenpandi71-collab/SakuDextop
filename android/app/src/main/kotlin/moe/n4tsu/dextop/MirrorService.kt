@@ -3871,8 +3871,8 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                         .apply()
                                 } else if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER") {
                                     // Hold and drag to aim a skill or Flicker, then release to cast.
-                                    val dxInput = (event.rawX - (downRawX - dx)) * targetWidth / layer.width.coerceAtLeast(1)
-                                    val dyInput = (event.rawY - (downRawY - dy)) * targetHeight / layer.height.coerceAtLeast(1)
+                                    val dxInput = dx * targetWidth / layer.width.coerceAtLeast(1)
+                                    val dyInput = dy * targetHeight / layer.height.coerceAtLeast(1)
                                     injectTouch(MotionEvent.ACTION_MOVE,
                                         (aimStartX + dxInput).coerceIn(0f, (targetWidth - 1).toFloat()),
                                         (aimStartY + dyInput).coerceIn(0f, (targetHeight - 1).toFloat()))
