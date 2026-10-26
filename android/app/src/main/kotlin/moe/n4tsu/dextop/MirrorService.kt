@@ -3866,7 +3866,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         }
         moveLayer.addView(moveStickHolder, FrameLayout.LayoutParams(-1, (moveLayer.height * .72f).roundToInt().coerceAtLeast(dp(180)), Gravity.BOTTOM))
         val positionHandle = TextView(this@MirrorService).apply {
-            text = "↕  PINDAH ANALOG"
+            text = "↕  GESER ANALOG"
             gravity = Gravity.CENTER
             textSize = 10f
             typeface = Typeface.DEFAULT_BOLD
@@ -3963,7 +3963,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             prefs.edit().putFloat("${key}_size", (current + .35f).coerceIn(.5f, 10f)).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
-        headerAction(if (prefs.getBoolean("edit_gamepad_positions", false)) "OK" else "ATUR", 48) {
+        headerAction(if (prefs.getBoolean("edit_gamepad_positions", false)) "SELESAI" else "ATUR POSISI", 62) {
             prefs.edit().putBoolean("edit_gamepad_positions", !prefs.getBoolean("edit_gamepad_positions", false)).apply()
             content.removeAllViews()
             buildLandscapeActionDeck(content, laptopPalette())
@@ -8281,12 +8281,12 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 toggleWorkspacePanel()
             })
         addCustomControls(panel, overlayButtonOrder())
-        panel.addView(actionButton(R.drawable.ic_edit, "Mapping Visual") { showVisualMappingEditor() })
+        panel.addView(actionButton(R.drawable.ic_edit, "Atur Tombol & Pemetaan") { showVisualMappingEditor() })
         val statusPrefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
         val statusHidden = statusPrefs.getBoolean("android_status_bar_hidden", false)
         panel.addView(actionButton(
             R.drawable.ic_edit,
-            if (statusHidden) "Tampilkan Status Bar Android" else "Sembunyikan Status Bar Android"
+            if (statusHidden) "Tampilkan Bilah Status Android" else "Sembunyikan Bilah Status Android"
         ) {
             val hide = !statusPrefs.getBoolean("android_status_bar_hidden", false)
             recentsExecutor.execute {
@@ -8306,9 +8306,9 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             }
         })
         val navigationRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        navigationRow.addView(actionButton(R.drawable.ic_chevron, "BACK") { performGlobalAction(GLOBAL_ACTION_BACK) },
+        navigationRow.addView(actionButton(R.drawable.ic_chevron, "KEMBALI") { performGlobalAction(GLOBAL_ACTION_BACK) },
             LinearLayout.LayoutParams(0, dp(44), 1f).apply { rightMargin = dp(5) })
-        navigationRow.addView(actionButton(R.drawable.ic_chevron, "HOME") { performGlobalAction(GLOBAL_ACTION_HOME) },
+        navigationRow.addView(actionButton(R.drawable.ic_chevron, "BERANDA") { performGlobalAction(GLOBAL_ACTION_HOME) },
             LinearLayout.LayoutParams(0, dp(44), 1f).apply { leftMargin = dp(5) })
         panel.addView(navigationRow, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(4) })
         panel.addView(
@@ -8339,10 +8339,10 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             setPadding(dp(8), dp(4), dp(8), dp(4))
             background = GradientDrawable().apply { setColor(Color.argb(235, 11, 17, 26)); cornerRadius = dp(16).toFloat(); setStroke(dp(1), Color.argb(180, 100, 200, 255)) }
         }
-        toolbar.addView(TextView(this).apply { text = "MAPPING VISUAL"; setTextColor(Color.WHITE); textSize = 11f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER_VERTICAL },
+        toolbar.addView(TextView(this).apply { text = "ATUR PEMETAAN"; setTextColor(Color.WHITE); textSize = 11f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER_VERTICAL },
             LinearLayout.LayoutParams(0, dp(38), 1f))
         toolbar.addView(TextView(this).apply {
-            text = "RESET"; setTextColor(Color.rgb(255,190,95)); textSize = 10f; gravity = Gravity.CENTER
+            text = "ATUR ULANG"; setTextColor(Color.rgb(255,190,95)); textSize = 10f; gravity = Gravity.CENTER
             setOnClickListener {
                 prefs.edit().clear().apply()
                 showVisualMappingEditor()
