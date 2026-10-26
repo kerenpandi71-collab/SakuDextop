@@ -529,18 +529,31 @@ internal class GamepadStickView(
         val travel = (width.coerceAtMost(height) / 2f * .62f).coerceAtLeast(1f)
         var nextX = ((x - centerX) / travel).coerceIn(-1f, 1f)
         var nextY = ((y - centerY) / travel).coerceIn(-1f, 1f)
+
+        // Radial dead-zone compensation: remove center drift but preserve the
+        // full range immediately outside the dead zone. Avoid temporal
+        // smoothing here because it adds visible lag during fast circular aim
+        // (especially Fanny cable turns).
         val length = hypot(nextX.toDouble(), nextY.toDouble()).toFloat()
-        if (length < .08f) {
+        val deadZone = .055f
+        if (length <= deadZone) {
             nextX = 0f
             nextY = 0f
+        } else {
+            val magnitude = ((length - deadZone) / (1f - deadZone)).coerceIn(0f, 1f)
+            val scale = magnitude / length.coerceAtLeast(.0001f)
+            nextX = (nextX * scale).coerceIn(-1f, 1f)
+            nextY = (nextY * scale).coerceIn(-1f, 1f)
         }
-        // Smooth tiny touch fluctuations without making the stick feel sluggish.
-        val smoothing = if (movedBeyondTapSlop) .42f else .58f
-        filteredX += (nextX - filteredX) * smoothing
-        filteredY += (nextY - filteredY) * smoothing
-        xValue = filteredX
-        yValue = filteredY
-        onChange(filteredX, filteredY)
+
+        // Send each fresh touch sample directly. The previous exponential
+        // filter smoothed the drawing and input together, but made the virtual
+        // stick trail the finger and feel like it was rotating in steps.
+        filteredX = nextX
+        filteredY = nextY
+        xValue = nextX
+        yValue = nextY
+        onChange(nextX, nextY)
         invalidate()
     }
 }
