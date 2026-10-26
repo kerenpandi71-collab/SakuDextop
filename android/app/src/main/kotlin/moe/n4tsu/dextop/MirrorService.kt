@@ -3739,8 +3739,8 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         setBackgroundColor(Color.TRANSPARENT)
         isClickable = true
         setOnTouchListener { _, _ -> true }
-        var smoothAxisX = 0f
-        var smoothAxisY = 0f
+        var lastSentAxisX = Int.MIN_VALUE
+        var lastSentAxisY = Int.MIN_VALUE
         fun stick(label: String, axisX: Int, axisY: Int): View {
             val group = LinearLayout(this@MirrorService).apply {
                 orientation = LinearLayout.VERTICAL
@@ -3751,23 +3751,29 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                         this@MirrorService,
                         onChange = { x, y ->
                             fun shapeAxis(value: Float): Float {
-                                val deadZone = .025f
-                                if (kotlin.math.abs(value) < deadZone) return 0f
-                                val normalized = ((kotlin.math.abs(value) - deadZone) / (1f - deadZone)).coerceIn(0f, 1f)
-                                val curved = normalized * .78f + normalized * normalized * normalized * .22f
+                                // Small dead zone plus a gentle response curve keeps fine aiming controllable.
+                                val deadZone = .012f
+                                val magnitude = kotlin.math.abs(value)
+                                if (magnitude <= deadZone) return 0f
+                                val normalized = ((magnitude - deadZone) / (1f - deadZone)).coerceIn(0f, 1f)
+                                val curved = normalized * .90f + normalized * normalized * .10f
                                 return kotlin.math.sign(value) * curved
                             }
-                            // No frame-delayed smoothing: shape the live sample for finer center control.
-                            val rawX = shapeAxis(x)
-                            val rawY = shapeAxis(y)
-                            smoothAxisX = rawX
-                            smoothAxisY = rawY
-                            injectVirtualGamepadAxis(axisX, (rawX.coerceIn(-1f, 1f) * 32767f).roundToInt())
-                            injectVirtualGamepadAxis(axisY, (rawY.coerceIn(-1f, 1f) * 32767f).roundToInt())
+                            // Avoid redundant Binder updates while preserving small deliberate movements.
+                            val nextX = (shapeAxis(x).coerceIn(-1f, 1f) * 32767f).roundToInt()
+                            val nextY = (shapeAxis(y).coerceIn(-1f, 1f) * 32767f).roundToInt()
+                            if (lastSentAxisX == Int.MIN_VALUE || kotlin.math.abs(nextX - lastSentAxisX) >= 48) {
+                                lastSentAxisX = nextX
+                                injectVirtualGamepadAxis(axisX, nextX)
+                            }
+                            if (lastSentAxisY == Int.MIN_VALUE || kotlin.math.abs(nextY - lastSentAxisY) >= 48) {
+                                lastSentAxisY = nextY
+                                injectVirtualGamepadAxis(axisY, nextY)
+                            }
                         },
                         onRelease = {
-                            smoothAxisX = 0f
-                            smoothAxisY = 0f
+                            lastSentAxisX = 0
+                            lastSentAxisY = 0
                             injectVirtualGamepadAxis(axisX, 0)
                             injectVirtualGamepadAxis(axisY, 0)
                         },
@@ -8135,6 +8141,29 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             })
         addCustomControls(panel, overlayButtonOrder())
         panel.addView(actionButton(R.drawable.ic_edit, "Mapping Visual") { showVisualMappingEditor() })
+        val statusPrefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
+        val statusHidden = statusPrefs.getBoolean("android_status_bar_hidden", false)
+        panel.addView(actionButton(
+            R.drawable.ic_edit,
+            if (statusHidden) "Tampilkan Status Bar Android" else "Sembunyikan Status Bar Android"
+        ) {
+            val hide = !statusPrefs.getBoolean("android_status_bar_hidden", false)
+            recentsExecutor.execute {
+                val result = if (hide) {
+                    privilegedAccess.execute("settings", "put", "global", "policy_control", "immersive.status=*")
+                } else {
+                    privilegedAccess.execute("settings", "delete", "global", "policy_control")
+                }
+                Handler(Looper.getMainLooper()).post {
+                    if (result.succeeded) {
+                        statusPrefs.edit().putBoolean("android_status_bar_hidden", hide).apply()
+                        showMainMenu(panel)
+                    } else {
+                        Log.w(logTag, "status bar toggle failed: ${result.error}")
+                    }
+                }
+            }
+        })
         val navigationRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         navigationRow.addView(actionButton(R.drawable.ic_chevron, "BACK") { performGlobalAction(GLOBAL_ACTION_BACK) },
             LinearLayout.LayoutParams(0, dp(44), 1f).apply { rightMargin = dp(5) })
