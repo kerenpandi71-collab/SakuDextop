@@ -8263,11 +8263,11 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         endOverlayTextInput()
         setOverlayFocusable(false)
         panel.removeAllViews()
-        panel.minimumWidth = dp(390)
+        panel.minimumWidth = dp(420)
         (panel.parent as? View)?.let { parentView ->
             val params = parentView.layoutParams
             if (params is FrameLayout.LayoutParams && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                params.width = maxOf(params.width, dp(390))
+                params.width = maxOf(params.width, dp(420))
                 parentView.layoutParams = params
             }
         }
@@ -8373,9 +8373,9 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 }
                 // Use the same independent per-button size setting as the right-hand deck.
                 // This makes the mapping editor accurately preview the size users selected.
-                val sizeScale = prefs.getFloat("${prefKey}_size", 2.25f).coerceIn(.5f, 10f) / 2.25f
+                val sizeScale = prefs.getFloat("${prefKey}_size", 3.0f).coerceIn(.75f, 18f) / 3.0f
                 val size = (dp(baseSizeDp) * sizeScale).roundToInt()
-                    .coerceIn(dp(44), (min(overlay.width, overlay.height) * .42f).roundToInt().coerceAtLeast(dp(44)))
+                    .coerceIn(dp(44), (min(overlay.width, overlay.height) * .48f).roundToInt().coerceAtLeast(dp(44)))
                 val defaults = when (key) {
                     "FIRE ALL" -> .55f to .86f
                     "REGEN" -> .68f to .86f
