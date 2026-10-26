@@ -3940,30 +3940,34 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             })
         }
         val buttonKeys = listOf("FIRE_ALL", "REGEN", "FLICKER", "BUFF", "S1", "S2", "S3", "CC", "CONCEAL", "ATTACK")
+        fun displayButtonName(key: String): String = when (key) {
+            "FIRE_ALL" -> "SERANG BEBAS"; "REGEN" -> "REGENERASI"; "FLICKER" -> "KILAT"; "BUFF" -> "BUFF"
+            "S1" -> "SKILL 1"; "S2" -> "SKILL 2"; "S3" -> "ULTI"; "CC" -> "KENDALI"; "CONCEAL" -> "SAMAR"; "ATTACK" -> "SERANG"; else -> key
+        }
         val selectedKey = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
         headerAction("‹", 32) {
             val index = buttonKeys.indexOf(prefs.getString("selected_gamepad_button", "S1")).coerceAtLeast(0)
             prefs.edit().putString("selected_gamepad_button", buttonKeys[(index - 1 + buttonKeys.size) % buttonKeys.size]).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
-        headerAction(selectedKey.replace("_", " "), 66) {
+        headerAction(displayButtonName(selectedKey), 66) {
             val index = buttonKeys.indexOf(prefs.getString("selected_gamepad_button", "S1")).coerceAtLeast(0)
             prefs.edit().putString("selected_gamepad_button", buttonKeys[(index + 1) % buttonKeys.size]).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
         headerAction("−", 36) {
             val key = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
-            val current = prefs.getFloat("${key}_size", 2.25f)
-            prefs.edit().putFloat("${key}_size", (current - .15f).coerceIn(.5f, 10f)).apply()
+            val current = prefs.getFloat("${key}_size", 3.0f)
+            prefs.edit().putFloat("${key}_size", (current - .25f).coerceIn(.75f, 18f)).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
         headerAction("+", 48) {
             val key = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
-            val current = prefs.getFloat("${key}_size", 2.25f)
-            prefs.edit().putFloat("${key}_size", (current + .35f).coerceIn(.5f, 10f)).apply()
+            val current = prefs.getFloat("${key}_size", 3.0f)
+            prefs.edit().putFloat("${key}_size", (current + .5f).coerceIn(.75f, 18f)).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
-        headerAction(if (prefs.getBoolean("edit_gamepad_positions", false)) "SELESAI" else "ATUR POSISI", 62) {
+        headerAction(if (prefs.getBoolean("edit_gamepad_positions", false)) "SIMPAN" else "GESER", 52) {
             prefs.edit().putBoolean("edit_gamepad_positions", !prefs.getBoolean("edit_gamepad_positions", false)).apply()
             content.removeAllViews()
             buildLandscapeActionDeck(content, laptopPalette())
@@ -3996,10 +4000,10 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             )
             specs.forEach { spec ->
                 val key = spec.label.replace(" ", "_")
-                val scale = prefs.getFloat("${key}_size", 2.25f).coerceIn(.5f, 10f)
+                val scale = prefs.getFloat("${key}_size", 3.0f).coerceIn(.75f, 18f)
                 // Each button has its own scale preference. Let the user enlarge individual
                 // controls substantially while keeping the circle inside the right-hand deck.
-                val maxSize = (layer.width * .98f).roundToInt().coerceAtLeast(dp(48))
+                val maxSize = (min(layer.width * .92f, layer.height * .72f)).roundToInt().coerceAtLeast(dp(48))
                 val size = (dp(spec.sizeDp) * scale).roundToInt().coerceIn(dp(36), maxSize)
                 val deckX = prefs.getFloat("${key}_deck_x", spec.x).coerceIn(0f, 1f)
                 val deckY = prefs.getFloat("${key}_deck_y", spec.y).coerceIn(0f, 1f)
@@ -4152,7 +4156,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 }
                 holder.addView(circle, FrameLayout.LayoutParams(size, size, Gravity.TOP or Gravity.CENTER_HORIZONTAL))
                 holder.addView(TextView(this).apply {
-                    text = spec.label; gravity = Gravity.CENTER; setTextColor(Color.WHITE); textSize = 8f
+                    text = when (spec.label) { "FIRE ALL" -> "SERANG BEBAS"; "REGEN" -> "REGENERASI"; "FLICKER" -> "KILAT"; "S1" -> "SKILL 1"; "S2" -> "SKILL 2"; "S3" -> "ULTI"; "CC" -> "KENDALI"; "CONCEAL" -> "SAMAR"; "ATTACK" -> "SERANG"; else -> spec.label }; gravity = Gravity.CENTER; setTextColor(Color.WHITE); textSize = 8f
                     typeface = Typeface.DEFAULT_BOLD; setShadowLayer(dp(2).toFloat(), 1f, 1f, Color.BLACK)
                 }, FrameLayout.LayoutParams(-1, dp(14), Gravity.BOTTOM))
                 val holderHeight = size + dp(14)
@@ -8281,7 +8285,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 toggleWorkspacePanel()
             })
         addCustomControls(panel, overlayButtonOrder())
-        panel.addView(actionButton(R.drawable.ic_edit, "Atur Tombol & Pemetaan") { showVisualMappingEditor() })
+        panel.addView(actionButton(R.drawable.ic_edit, "Atur Tombol dan Pemetaan") { showVisualMappingEditor() })
         val statusPrefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
         val statusHidden = statusPrefs.getBoolean("android_status_bar_hidden", false)
         panel.addView(actionButton(
@@ -8339,17 +8343,17 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             setPadding(dp(8), dp(4), dp(8), dp(4))
             background = GradientDrawable().apply { setColor(Color.argb(235, 11, 17, 26)); cornerRadius = dp(16).toFloat(); setStroke(dp(1), Color.argb(180, 100, 200, 255)) }
         }
-        toolbar.addView(TextView(this).apply { text = "ATUR PEMETAAN"; setTextColor(Color.WHITE); textSize = 11f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER_VERTICAL },
+        toolbar.addView(TextView(this).apply { text = "ATUR PEMETAAN SENTUH"; setTextColor(Color.WHITE); textSize = 11f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER_VERTICAL },
             LinearLayout.LayoutParams(0, dp(38), 1f))
         toolbar.addView(TextView(this).apply {
-            text = "ATUR ULANG"; setTextColor(Color.rgb(255,190,95)); textSize = 10f; gravity = Gravity.CENTER
+            text = "ULANG"; setTextColor(Color.rgb(255,190,95)); textSize = 10f; gravity = Gravity.CENTER
             setOnClickListener {
                 prefs.edit().clear().apply()
                 showVisualMappingEditor()
             }
         }, LinearLayout.LayoutParams(dp(58), dp(38)))
         toolbar.addView(TextView(this).apply {
-            text = "SELESAI"; setTextColor(Color.rgb(100,220,255)); textSize = 10f; gravity = Gravity.CENTER
+            text = "TUTUP"; setTextColor(Color.rgb(100,220,255)); textSize = 10f; gravity = Gravity.CENTER
             setOnClickListener { visualMappingOverlay?.let { runCatching { host.removeView(it) } }; visualMappingOverlay = null }
         }, LinearLayout.LayoutParams(dp(66), dp(38)))
         overlay.addView(toolbar, FrameLayout.LayoutParams(-1, dp(46), Gravity.TOP))
