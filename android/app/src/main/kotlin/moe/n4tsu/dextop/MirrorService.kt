@@ -3750,10 +3750,10 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                     GamepadStickView(
                         this@MirrorService,
                         onChange = { x, y ->
-                            val rawX = if (kotlin.math.abs(x) < .055f) 0f else x
-                            val rawY = if (kotlin.math.abs(y) < .055f) 0f else y
-                            smoothAxisX = smoothAxisX * .42f + rawX * .58f
-                            smoothAxisY = smoothAxisY * .42f + rawY * .58f
+                            val rawX = if (kotlin.math.abs(x) < .035f) 0f else x
+                            val rawY = if (kotlin.math.abs(y) < .035f) 0f else y
+                            smoothAxisX = smoothAxisX * .28f + rawX * .72f
+                            smoothAxisY = smoothAxisY * .28f + rawY * .72f
                             injectVirtualGamepadAxis(axisX, (smoothAxisX.coerceIn(-1f, 1f) * 32767f).roundToInt())
                             injectVirtualGamepadAxis(axisY, (smoothAxisY.coerceIn(-1f, 1f) * 32767f).roundToInt())
                         },
@@ -3784,36 +3784,43 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         content.addView(TextView(this).apply {
             text = "SAKU MOBA"; gravity = Gravity.CENTER; setTextColor(palette.text); textSize = 10f
         }, LinearLayout.LayoutParams(-1, dp(22)))
-        val body = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
         val layer = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
-        body.addView(layer, FrameLayout.LayoutParams(-1, -1))
+        content.addView(layer, LinearLayout.LayoutParams(-1, 0, 1f))
         layer.post {
             if (layer.width <= 0 || layer.height <= 0) return@post
             val prefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
-            data class SkillSpec(val label: String, val icon: String, val color: Int, val sizeDp: Int, val x: Float, val y: Float)
+            data class SkillSpec(
+                val label: String, val icon: String, val color: Int, val sizeDp: Int,
+                val x: Float, val y: Float, val targetX: Float, val targetY: Float
+            )
+            // Deck coordinates are intentionally separate from touch-map coordinates.
+            // This prevents screen-wide mapping positions from collapsing all controls
+            // into the narrow right-hand gamepad panel.
             val specs = listOf(
-                SkillSpec("FIRE ALL", "❄", Color.rgb(90,180,229), 55, .13f, .84f),
-                SkillSpec("REGEN", "✚", Color.rgb(108,224,108), 55, .29f, .84f),
-                SkillSpec("FLICKER", "⚡", Color.rgb(255,204,0), 55, .45f, .84f),
-                SkillSpec("BUFF", "💧", Color.rgb(102,179,255), 65, .62f, .82f),
-                SkillSpec("S1", "▲", Color.rgb(255,157,0), 60, .55f, .72f),
-                SkillSpec("S2", "◆", Color.rgb(0,229,255), 60, .72f, .62f),
-                SkillSpec("S3", "✦", Color.rgb(196,110,255), 85, .84f, .80f),
-                SkillSpec("CC", "✦", Color.rgb(163,102,255), 55, .72f, .42f),
-                SkillSpec("CONCEAL", "◉", Color.rgb(77,255,234), 60, .91f, .43f),
-                SkillSpec("ATTACK", "⚔", Color.rgb(153,204,255), 110, .94f, .88f)
+                SkillSpec("FIRE ALL", "❄", Color.rgb(90,180,229), 44, .12f, .84f, .13f, .84f),
+                SkillSpec("REGEN", "✚", Color.rgb(108,224,108), 44, .31f, .84f, .29f, .84f),
+                SkillSpec("FLICKER", "⚡", Color.rgb(255,204,0), 46, .50f, .84f, .45f, .84f),
+                SkillSpec("BUFF", "◆", Color.rgb(102,179,255), 46, .69f, .82f, .62f, .82f),
+                SkillSpec("S1", "▲", Color.rgb(255,157,0), 48, .40f, .62f, .55f, .72f),
+                SkillSpec("S2", "◆", Color.rgb(0,229,255), 48, .62f, .52f, .72f, .62f),
+                SkillSpec("S3", "✦", Color.rgb(196,110,255), 64, .82f, .72f, .84f, .80f),
+                SkillSpec("CC", "✦", Color.rgb(163,102,255), 42, .62f, .32f, .72f, .42f),
+                SkillSpec("CONCEAL", "◉", Color.rgb(77,255,234), 42, .84f, .32f, .91f, .43f),
+                SkillSpec("ATTACK", "⚔", Color.rgb(153,204,255), 70, .86f, .88f, .94f, .88f)
             )
             specs.forEach { spec ->
                 val key = spec.label.replace(" ", "_")
-                val size = dp(spec.sizeDp)
-                val px = prefs.getFloat("${key}_x", spec.x)
-                val py = prefs.getFloat("${key}_y", spec.y)
+                val size = dp(spec.sizeDp).coerceAtMost((layer.width / 3.4f).roundToInt().coerceAtLeast(dp(34)))
+                val deckX = prefs.getFloat("${key}_deck_x", spec.x).coerceIn(0f, 1f)
+                val deckY = prefs.getFloat("${key}_deck_y", spec.y).coerceIn(0f, 1f)
+                val targetX = prefs.getFloat("${key}_x", spec.targetX).coerceIn(0f, 1f)
+                val targetY = prefs.getFloat("${key}_y", spec.targetY).coerceIn(0f, 1f)
                 val angle = prefs.getFloat("${key}_rotation", if (key == "ATTACK") 45f else 0f)
                 val holder = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
                 val circle = TextView(this).apply {
                     gravity = Gravity.CENTER
                     text = spec.icon
-                    textSize = if (key == "ATTACK") 39f else if (key == "ULT") 30f else 23f
+                    textSize = if (key == "ATTACK") 31f else if (key == "S3") 27f else 20f
                     typeface = Typeface.DEFAULT_BOLD
                     setTextColor(spec.color)
                     setShadowLayer(dp(8).toFloat(), 0f, 0f, spec.color)
@@ -3825,42 +3832,63 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                         )
                     ).apply {
                         shape = GradientDrawable.OVAL
-                        setStroke(dp(if (key == "ULT") 3 else 2), Color.argb(220, Color.red(spec.color), Color.green(spec.color), Color.blue(spec.color)))
+                        setStroke(dp(if (key == "S3" || key == "ATTACK") 3 else 2),
+                            Color.argb(220, Color.red(spec.color), Color.green(spec.color), Color.blue(spec.color)))
                     }
                     elevation = dp(5).toFloat()
                     rotation = angle
+                    var downRawX = 0f
+                    var downRawY = 0f
                     var aimStartX = 0f
                     var aimStartY = 0f
-                    var aimDownX = 0f
-                    var aimDownY = 0f
+                    var moved = false
                     setOnTouchListener { view, event ->
-                        val nx = prefs.getFloat("${key}_x", spec.x)
-                        val ny = prefs.getFloat("${key}_y", spec.y)
+                        val lp = holder.layoutParams as? FrameLayout.LayoutParams
                         when (event.actionMasked) {
                             MotionEvent.ACTION_DOWN -> {
-                                view.scaleX = .95f; view.scaleY = .95f
-                                aimDownX = event.rawX; aimDownY = event.rawY
-                                aimStartX = nx * (targetWidth - 1); aimStartY = ny * (targetHeight - 1)
-                                injectTouch(MotionEvent.ACTION_DOWN, aimStartX, aimStartY)
+                                downRawX = event.rawX
+                                downRawY = event.rawY
+                                moved = false
+                                view.scaleX = .96f; view.scaleY = .96f
+                                aimStartX = targetX * (targetWidth - 1)
+                                aimStartY = targetY * (targetHeight - 1)
+                                if (!overlayLayoutEditing) injectTouch(MotionEvent.ACTION_DOWN, aimStartX, aimStartY)
                                 true
                             }
                             MotionEvent.ACTION_MOVE -> {
-                                // Drag while holding S1/S2/S3 to steer the skill aim across the virtual display.
-                                if (key == "S1" || key == "S2" || key == "S3") {
-                                    val dx = (event.rawX - aimDownX) * targetWidth / layer.width.coerceAtLeast(1)
-                                    val dy = (event.rawY - aimDownY) * targetHeight / layer.height.coerceAtLeast(1)
+                                val dx = event.rawX - downRawX
+                                val dy = event.rawY - downRawY
+                                if (kotlin.math.abs(dx) > dp(3) || kotlin.math.abs(dy) > dp(3)) moved = true
+                                if (overlayLayoutEditing && lp != null) {
+                                    lp.leftMargin = (lp.leftMargin + dx.roundToInt()).coerceIn(0, (layer.width - holder.width).coerceAtLeast(0))
+                                    lp.topMargin = (lp.topMargin + dy.roundToInt()).coerceIn(0, (layer.height - holder.height).coerceAtLeast(0))
+                                    holder.layoutParams = lp
+                                    downRawX = event.rawX
+                                    downRawY = event.rawY
+                                    prefs.edit()
+                                        .putFloat("${key}_deck_x", ((lp.leftMargin + holder.width / 2f) / layer.width.coerceAtLeast(1)).coerceIn(0f, 1f))
+                                        .putFloat("${key}_deck_y", ((lp.topMargin + holder.height / 2f) / layer.height.coerceAtLeast(1)).coerceIn(0f, 1f))
+                                        .apply()
+                                } else if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER") {
+                                    // Hold and drag to aim a skill or Flicker, then release to cast.
+                                    val dxInput = (event.rawX - (downRawX - dx)) * targetWidth / layer.width.coerceAtLeast(1)
+                                    val dyInput = (event.rawY - (downRawY - dy)) * targetHeight / layer.height.coerceAtLeast(1)
                                     injectTouch(MotionEvent.ACTION_MOVE,
-                                        (aimStartX + dx).coerceIn(0f, (targetWidth - 1).toFloat()),
-                                        (aimStartY + dy).coerceIn(0f, (targetHeight - 1).toFloat()))
+                                        (aimStartX + dxInput).coerceIn(0f, (targetWidth - 1).toFloat()),
+                                        (aimStartY + dyInput).coerceIn(0f, (targetHeight - 1).toFloat()))
                                 }
                                 true
                             }
                             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                                val dx = (event.rawX - aimDownX) * targetWidth / layer.width.coerceAtLeast(1)
-                                val dy = (event.rawY - aimDownY) * targetHeight / layer.height.coerceAtLeast(1)
-                                injectTouch(MotionEvent.ACTION_UP,
-                                    (aimStartX + if (key == "S1" || key == "S2" || key == "S3") dx else 0f).coerceIn(0f, (targetWidth - 1).toFloat()),
-                                    (aimStartY + if (key == "S1" || key == "S2" || key == "S3") dy else 0f).coerceIn(0f, (targetHeight - 1).toFloat()))
+                                if (!overlayLayoutEditing) {
+                                    val dxInput = if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER")
+                                        (event.rawX - downRawX) * targetWidth / layer.width.coerceAtLeast(1) else 0f
+                                    val dyInput = if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER")
+                                        (event.rawY - downRawY) * targetHeight / layer.height.coerceAtLeast(1) else 0f
+                                    injectTouch(MotionEvent.ACTION_UP,
+                                        (aimStartX + dxInput).coerceIn(0f, (targetWidth - 1).toFloat()),
+                                        (aimStartY + dyInput).coerceIn(0f, (targetHeight - 1).toFloat()))
+                                }
                                 view.scaleX = 1f; view.scaleY = 1f
                                 true
                             }
@@ -3869,20 +3897,19 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                     }
                 }
                 holder.addView(circle, FrameLayout.LayoutParams(size, size, Gravity.TOP or Gravity.CENTER_HORIZONTAL))
-                if (key != "ATTACK") holder.addView(TextView(this).apply {
-                    text = spec.label; gravity = Gravity.CENTER; setTextColor(Color.WHITE); textSize = 9f
+                holder.addView(TextView(this).apply {
+                    text = spec.label; gravity = Gravity.CENTER; setTextColor(Color.WHITE); textSize = 8f
                     typeface = Typeface.DEFAULT_BOLD; setShadowLayer(dp(2).toFloat(), 1f, 1f, Color.BLACK)
-                }, FrameLayout.LayoutParams(-2, dp(16), Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { topMargin = size - dp(1) })
-                val holderHeight = size + if (key == "ATTACK") 0 else dp(16)
-                val x = (px * layer.width).roundToInt() - size / 2
-                val y = (py * layer.height).roundToInt() - size / 2
+                }, FrameLayout.LayoutParams(-1, dp(14), Gravity.BOTTOM))
+                val holderHeight = size + dp(14)
+                val x = (deckX * layer.width).roundToInt() - size / 2
+                val y = (deckY * layer.height).roundToInt() - size / 2
                 layer.addView(holder, FrameLayout.LayoutParams(size, holderHeight).apply {
-                    leftMargin = x.coerceIn(0, (layer.width-size).coerceAtLeast(0))
-                    topMargin = y.coerceIn(0, (layer.height-holderHeight).coerceAtLeast(0))
+                    leftMargin = x.coerceIn(0, (layer.width - size).coerceAtLeast(0))
+                    topMargin = y.coerceIn(0, (layer.height - holderHeight).coerceAtLeast(0))
                 })
             }
         }
-        content.addView(body, LinearLayout.LayoutParams(-1, 0, 1f))
     }
 
     /** Compact Game Boy-style controller: D-pad on the left, A/B on the right. */
