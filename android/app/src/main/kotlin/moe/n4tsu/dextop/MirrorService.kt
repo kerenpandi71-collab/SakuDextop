@@ -3785,18 +3785,30 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         header.addView(TextView(this).apply {
             text = "SAKU MOBA"; gravity = Gravity.CENTER_VERTICAL; setTextColor(palette.text); textSize = 10f
-        }, LinearLayout.LayoutParams(0, dp(28), 1f))
-        header.addView(TextView(this).apply {
-            text = if (prefs.getBoolean("edit_gamepad_positions", false)) "SELESAI" else "ATUR"
-            gravity = Gravity.CENTER; setTextColor(Color.rgb(100,220,255)); textSize = 10f; typeface = Typeface.DEFAULT_BOLD
-            setPadding(dp(6), 0, dp(6), 0)
-            setOnClickListener {
-                prefs.edit().putBoolean("edit_gamepad_positions", !prefs.getBoolean("edit_gamepad_positions", false)).apply()
-                content.removeAllViews()
-                buildLandscapeActionDeck(content, laptopPalette())
-            }
-        }, LinearLayout.LayoutParams(dp(64), dp(28)))
-        content.addView(header, LinearLayout.LayoutParams(-1, dp(28)))
+        }, LinearLayout.LayoutParams(0, dp(32), 1f))
+        fun headerAction(label: String, width: Int, action: () -> Unit) {
+            header.addView(TextView(this).apply {
+                text = label; gravity = Gravity.CENTER; setTextColor(Color.rgb(100,220,255))
+                textSize = 12f; typeface = Typeface.DEFAULT_BOLD
+                setOnClickListener { action() }
+            }, LinearLayout.LayoutParams(dp(width), dp(30)))
+        }
+        headerAction("−", 28) {
+            val scale = (prefs.getFloat("button_scale", 1f) - .1f).coerceIn(.55f, 1.6f)
+            prefs.edit().putFloat("button_scale", scale).apply()
+            content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
+        }
+        headerAction("+", 28) {
+            val scale = (prefs.getFloat("button_scale", 1f) + .1f).coerceIn(.55f, 1.6f)
+            prefs.edit().putFloat("button_scale", scale).apply()
+            content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
+        }
+        headerAction(if (prefs.getBoolean("edit_gamepad_positions", false)) "OK" else "ATUR", 48) {
+            prefs.edit().putBoolean("edit_gamepad_positions", !prefs.getBoolean("edit_gamepad_positions", false)).apply()
+            content.removeAllViews()
+            buildLandscapeActionDeck(content, laptopPalette())
+        }
+        content.addView(header, LinearLayout.LayoutParams(-1, dp(34)))
         val layer = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
         content.addView(layer, LinearLayout.LayoutParams(-1, 0, 1f))
         layer.post {
@@ -3810,21 +3822,22 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             // This prevents screen-wide mapping positions from collapsing all controls
             // into the narrow right-hand gamepad panel.
             val specs = listOf(
-                // Spread controls across the narrow panel by default; every position remains draggable in ATUR mode.
-                SkillSpec("FIRE ALL", "❄", Color.rgb(90,180,229), 36, .20f, .20f, .13f, .84f),
-                SkillSpec("REGEN", "✚", Color.rgb(108,224,108), 36, .72f, .20f, .29f, .84f),
-                SkillSpec("FLICKER", "⚡", Color.rgb(255,204,0), 38, .20f, .43f, .45f, .84f),
-                SkillSpec("BUFF", "◆", Color.rgb(102,179,255), 38, .72f, .43f, .62f, .82f),
-                SkillSpec("S1", "▲", Color.rgb(255,157,0), 40, .20f, .66f, .55f, .72f),
-                SkillSpec("S2", "◆", Color.rgb(0,229,255), 40, .50f, .66f, .72f, .62f),
-                SkillSpec("S3", "✦", Color.rgb(196,110,255), 52, .80f, .66f, .84f, .80f),
-                SkillSpec("CC", "✦", Color.rgb(163,102,255), 34, .20f, .88f, .72f, .42f),
-                SkillSpec("CONCEAL", "◉", Color.rgb(77,255,234), 34, .52f, .88f, .91f, .43f),
-                SkillSpec("ATTACK", "⚔", Color.rgb(153,204,255), 58, .82f, .88f, .94f, .88f)
+                // Default two-column layout keeps every control separated even on a narrow gamepad panel.
+                SkillSpec("FIRE ALL", "❄", Color.rgb(90,180,229), 34, .25f, .10f, .13f, .84f),
+                SkillSpec("REGEN", "✚", Color.rgb(108,224,108), 34, .75f, .10f, .29f, .84f),
+                SkillSpec("FLICKER", "⚡", Color.rgb(255,204,0), 36, .25f, .29f, .45f, .84f),
+                SkillSpec("BUFF", "◆", Color.rgb(102,179,255), 36, .75f, .29f, .62f, .82f),
+                SkillSpec("S1", "▲", Color.rgb(255,157,0), 36, .25f, .48f, .55f, .72f),
+                SkillSpec("S2", "◆", Color.rgb(0,229,255), 36, .75f, .48f, .72f, .62f),
+                SkillSpec("S3", "✦", Color.rgb(196,110,255), 44, .25f, .70f, .84f, .80f),
+                SkillSpec("CC", "✦", Color.rgb(163,102,255), 32, .75f, .70f, .72f, .42f),
+                SkillSpec("CONCEAL", "◉", Color.rgb(77,255,234), 32, .25f, .90f, .91f, .43f),
+                SkillSpec("ATTACK", "⚔", Color.rgb(153,204,255), 48, .75f, .90f, .94f, .88f)
             )
             specs.forEach { spec ->
                 val key = spec.label.replace(" ", "_")
-                val size = dp(spec.sizeDp).coerceAtMost((layer.width / 3.4f).roundToInt().coerceAtLeast(dp(34)))
+                val scale = prefs.getFloat("button_scale", 1f).coerceIn(.55f, 1.6f)
+                val size = (dp(spec.sizeDp) * scale).roundToInt().coerceAtMost((layer.width / 2.6f).roundToInt().coerceAtLeast(dp(30)))
                 val deckX = prefs.getFloat("${key}_deck_x", spec.x).coerceIn(0f, 1f)
                 val deckY = prefs.getFloat("${key}_deck_y", spec.y).coerceIn(0f, 1f)
                 val targetX = prefs.getFloat("${key}_x", spec.targetX).coerceIn(0f, 1f)
@@ -8031,6 +8044,14 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         endOverlayTextInput()
         setOverlayFocusable(false)
         panel.removeAllViews()
+        panel.minimumWidth = dp(390)
+        (panel.parent as? View)?.let { parentView ->
+            val params = parentView.layoutParams
+            if (params is FrameLayout.LayoutParams && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                params.width = maxOf(params.width, dp(390))
+                parentView.layoutParams = params
+            }
+        }
         panel.addView(
             menuTitle(
                 "Dextop",
