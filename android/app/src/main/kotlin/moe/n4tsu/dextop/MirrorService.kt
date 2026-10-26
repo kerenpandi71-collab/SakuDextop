@@ -4661,12 +4661,14 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         if (params != null) {
             params.width = if (horizontal) 0 else -1
             params.height = if (horizontal) -1 else 0
-            params.weight = if (horizontal) 1.5f else 1f
+            params.weight = if (horizontal) 1.35f else 1f
             surface.layoutParams = params
         }
-        laptopLandscapeAnalogDeck?.layoutParams = LinearLayout.LayoutParams(0, -1, .5f)
+        // Give the right-hand skill panel more width; keep the mirrored play area
+        // broad enough to remain usable on landscape phones.
+        laptopLandscapeAnalogDeck?.layoutParams = LinearLayout.LayoutParams(0, -1, .45f)
         laptopDeck?.let {
-            it.layoutParams = if (horizontal) LinearLayout.LayoutParams(0, -1, .5f)
+            it.layoutParams = if (horizontal) LinearLayout.LayoutParams(0, -1, .70f)
                 else laptopDeckLayoutParams()
         }
         content.requestLayout()
