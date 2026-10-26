@@ -3883,7 +3883,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                     background = GradientDrawable().apply {
                         shape = GradientDrawable.OVAL
                         setColor(Color.TRANSPARENT)
-                        setStroke(dp(2), Color.argb(230, spec.color))
+                        setStroke(dp(2), Color.argb(230, Color.red(spec.color), Color.green(spec.color), Color.blue(spec.color)))
                     }
                     visibility = View.GONE
                     isClickable = false
@@ -3893,7 +3893,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 val aimDot = View(this).apply {
                     background = GradientDrawable().apply {
                         shape = GradientDrawable.OVAL
-                        setColor(Color.argb(220, spec.color))
+                        setColor(Color.argb(220, Color.red(spec.color), Color.green(spec.color), Color.blue(spec.color)))
                     }
                     visibility = View.GONE
                     isClickable = false
