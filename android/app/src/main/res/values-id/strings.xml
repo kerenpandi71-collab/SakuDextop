@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dextop_swipe_ime_label">Input geser Dextop</string>
+    <string name="accessibility_service_description">Mengontrol layar virtual, input, dan panel kontrol Dextop</string>
+    <string name="embedded_pairing_channel">Pengaturan akses bawaan</string>
+    <string name="embedded_pairing_title">Pasangkan Dextop</string>
+    <string name="embedded_pairing_notification_text">Masukkan kode enam digit yang ditampilkan di Debugging nirkabel</string>
+    <string name="embedded_pairing_code">Kode pemasangan enam digit</string>
+    <string name="embedded_pairing_enter_code">Masukkan kode pemasangan</string>
+    <string name="embedded_pairing_success">Dextop terhubung</string>
+    <string name="embedded_pairing_success_message">Pemasangan selesai. Kembali ke Dextop.</string>
+    <string name="embedded_pairing_failed">Dextop tidak dapat terhubung</string>
+    <string name="embedded_pairing_invalid_code">Masukkan kode enam digit</string>
+    <string name="embedded_pairing_searching">Mencari layanan pemasangan</string>
+    <string name="embedded_pairing_service_found">Layanan pemasangan ditemukan</string>
+    <string name="embedded_pairing_service_not_found">Layanan pemasangan tidak ditemukan</string>
+    <string name="embedded_pairing_retry">Coba lagi</string>
+    <string name="embedded_pairing_in_progress">Pemasangan sedang berlangsung</string>
+    <string name="dextop_shortcut_start_display">Mulai Dextop</string>
+    <string name="dextop_shortcut_start_display_long">Mulai atau hentikan layar virtual Dextop</string>
+</resources>
