@@ -3750,6 +3750,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         var pendingAxisY = 0
         var pendingCodeX = PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_X
         var pendingCodeY = PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_Y
+        var pendingAxisGeneration = 0L
         var axisDispatchPosted = false
         val axisLock = Any()
         fun queueAxes(codeX: Int, codeY: Int, x: Int, y: Int) {
@@ -3758,28 +3759,51 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 pendingCodeY = codeY
                 pendingAxisX = x
                 pendingAxisY = y
+                pendingAxisGeneration++
                 if (axisDispatchPosted) false else {
                     axisDispatchPosted = true
                     true
                 }
             }
-            if (shouldPost) {
-                gamepadAxisExecutor.execute {
+            if (!shouldPost) return
+
+            // Keep exactly one drain task in flight. Clearing axisDispatchPosted before
+            // Binder IPC let every incoming MotionEvent enqueue another task whenever IPC
+            // was slow, building a stale queue and delaying fast Fanny cable reversals.
+            gamepadAxisExecutor.execute {
+                while (true) {
                     val sample = synchronized(axisLock) {
-                        val values = intArrayOf(pendingCodeX, pendingAxisX, pendingCodeY, pendingAxisY)
-                        axisDispatchPosted = false
-                        values
+                        longArrayOf(
+                            pendingCodeX.toLong(),
+                            pendingAxisX.toLong(),
+                            pendingCodeY.toLong(),
+                            pendingAxisY.toLong(),
+                            pendingAxisGeneration
+                        )
                     }
-                    // Binder IPC is synchronous; doing it on the UI thread stalls touch
-                    // delivery and makes fast cable-direction reversals feel choppy.
-                    if (sample[1] != lastSentAxisX) {
-                        lastSentAxisX = sample[1]
-                        injectVirtualGamepadAxis(sample[0], sample[1])
+                    val xCode = sample[0].toInt()
+                    val xValue = sample[1].toInt()
+                    val yCode = sample[2].toInt()
+                    val yValue = sample[3].toInt()
+                    // Binder IPC remains off the UI thread. During IPC, new moves replace
+                    // the pending sample instead of accumulating behind the current one.
+                    if (xValue != lastSentAxisX) {
+                        injectVirtualGamepadAxis(xCode, xValue)
+                        lastSentAxisX = xValue
                     }
-                    if (sample[3] != lastSentAxisY) {
-                        lastSentAxisY = sample[3]
-                        injectVirtualGamepadAxis(sample[2], sample[3])
+                    if (yValue != lastSentAxisY) {
+                        injectVirtualGamepadAxis(yCode, yValue)
+                        lastSentAxisY = yValue
                     }
+                    val finished = synchronized(axisLock) {
+                        if (pendingAxisGeneration == sample[4]) {
+                            axisDispatchPosted = false
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    if (finished) break
                 }
             }
         }
@@ -3813,18 +3837,9 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                             queueAxes(axisX, axisY, nextX, nextY)
                         },
                         onRelease = {
-                            synchronized(axisLock) {
-                                pendingAxisX = 0
-                                pendingAxisY = 0
-                            }
-                            // Queue release behind any in-flight sample so a stale nonzero
-                            // value can never arrive after the stick has been lifted.
-                            gamepadAxisExecutor.execute {
-                                injectVirtualGamepadAxis(axisX, 0)
-                                injectVirtualGamepadAxis(axisY, 0)
-                                lastSentAxisX = 0
-                                lastSentAxisY = 0
-                            }
+                            // Use the same latest-value drain for release so a stale
+                            // movement sample cannot be sent after the stick returns to zero.
+                            queueAxes(axisX, axisY, 0, 0)
                         },
                         baseColor = Color.argb(70, 80, 80, 88),
                         ringColor = palette.border,
