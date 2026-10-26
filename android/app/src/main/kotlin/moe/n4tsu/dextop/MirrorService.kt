@@ -3741,10 +3741,40 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         setOnTouchListener { _, _ -> true }
         var lastSentAxisX = Int.MIN_VALUE
         var lastSentAxisY = Int.MIN_VALUE
-        // Cap binder/uinput axis traffic to roughly 120 Hz. Tiny raw touch deltas
-        // previously generated two IPC writes per MotionEvent and could backlog
-        // the input service during fast circular movement (notably Fanny cables).
+        var pendingAxisX = 0
+        var pendingAxisY = 0
+        var pendingCodeX = PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_X
+        var pendingCodeY = PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_Y
+        var axisDispatchPosted = false
         var lastAxisDispatchAt = 0L
+        val axisDispatchHandler = Handler(Looper.getMainLooper())
+        val dispatchPendingAxes = Runnable {
+            axisDispatchPosted = false
+            val x = pendingAxisX
+            val y = pendingAxisY
+            if (x != lastSentAxisX) {
+                lastSentAxisX = x
+                injectVirtualGamepadAxis(pendingCodeX, x)
+            }
+            if (y != lastSentAxisY) {
+                lastSentAxisY = y
+                injectVirtualGamepadAxis(pendingCodeY, y)
+            }
+            lastAxisDispatchAt = SystemClock.uptimeMillis()
+        }
+        fun queueAxes(codeX: Int, codeY: Int, x: Int, y: Int) {
+            pendingCodeX = codeX
+            pendingCodeY = codeY
+            pendingAxisX = x
+            pendingAxisY = y
+            val elapsed = SystemClock.uptimeMillis() - lastAxisDispatchAt
+            if (!axisDispatchPosted) {
+                axisDispatchPosted = true
+                val waitMs = (8L - elapsed).coerceAtLeast(0L)
+                if (waitMs == 0L) axisDispatchHandler.post(dispatchPendingAxes)
+                else axisDispatchHandler.postDelayed(dispatchPendingAxes, waitMs)
+            }
+        }
         fun stick(label: String, axisX: Int, axisY: Int): View {
             val group = LinearLayout(this@MirrorService).apply {
                 orientation = LinearLayout.VERTICAL
@@ -3769,24 +3799,19 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                             // A large threshold visibly quantizes the stick, especially during Fanny cable aiming.
                             val nextX = (shapeAxis(x).coerceIn(-1f, 1f) * 32767f).roundToInt()
                             val nextY = (shapeAxis(y).coerceIn(-1f, 1f) * 32767f).roundToInt()
-                            val now = SystemClock.uptimeMillis()
-                            // Do not drop intermediate samples behind a timer gate: that
-                            // creates visible angular stepping during circular cable aiming.
-                            // Suppress only identical quantized values and send each new axis
-                            // value immediately so the input dispatcher can preserve the path.
-                            if (lastSentAxisX == Int.MIN_VALUE || nextX != lastSentAxisX) {
-                                lastSentAxisX = nextX
-                                injectVirtualGamepadAxis(axisX, nextX)
-                            }
-                            if (lastSentAxisY == Int.MIN_VALUE || nextY != lastSentAxisY) {
-                                lastSentAxisY = nextY
-                                injectVirtualGamepadAxis(axisY, nextY)
-                            }
-                            lastAxisDispatchAt = now
+                            // Keep the newest position and dispatch at up to 120 Hz.
+                            // Coalescing stale samples avoids a growing IPC backlog during
+                            // fast circular movement while keeping the newest input responsive.
+                            queueAxes(axisX, axisY, nextX, nextY)
                         },
                         onRelease = {
+                            axisDispatchHandler.removeCallbacks(dispatchPendingAxes)
+                            axisDispatchPosted = false
+                            pendingAxisX = 0
+                            pendingAxisY = 0
                             lastSentAxisX = 0
                             lastSentAxisY = 0
+                            lastAxisDispatchAt = SystemClock.uptimeMillis()
                             injectVirtualGamepadAxis(axisX, 0)
                             injectVirtualGamepadAxis(axisY, 0)
                         },
