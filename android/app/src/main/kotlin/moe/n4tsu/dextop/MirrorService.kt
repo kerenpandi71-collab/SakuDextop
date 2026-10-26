@@ -3919,7 +3919,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         val prefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
         val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         header.addView(TextView(this).apply {
-            text = "SAKU MOBA"; gravity = Gravity.CENTER_VERTICAL; setTextColor(palette.text); textSize = 10f
+            text = "KONTROL ARENA SAKU"; gravity = Gravity.CENTER_VERTICAL; setTextColor(palette.text); textSize = 10f
         }, LinearLayout.LayoutParams(0, dp(32), 1f))
         fun headerAction(label: String, width: Int, action: () -> Unit) {
             header.addView(TextView(this).apply {
@@ -3941,8 +3941,8 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         }
         val buttonKeys = listOf("FIRE_ALL", "REGEN", "FLICKER", "BUFF", "S1", "S2", "S3", "CC", "CONCEAL", "ATTACK")
         fun displayButtonName(key: String): String = when (key) {
-            "FIRE_ALL" -> "SERANG BEBAS"; "REGEN" -> "REGENERASI"; "FLICKER" -> "KILAT"; "BUFF" -> "BUFF"
-            "S1" -> "SKILL 1"; "S2" -> "SKILL 2"; "S3" -> "ULTI"; "CC" -> "KENDALI"; "CONCEAL" -> "SAMAR"; "ATTACK" -> "SERANG"; else -> key
+            "FIRE_ALL" -> "SERANG BEBAS"; "REGEN" -> "REGENERASI"; "FLICKER" -> "KILAT"; "BUFF" -> "PENGUAT"
+            "S1" -> "SKILL 1"; "S2" -> "SKILL 2"; "S3" -> "ULTI"; "CC" -> "KENDALI"; "CONCEAL" -> "PENYAMARAN"; "ATTACK" -> "SERANG"; else -> key
         }
         val selectedKey = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
         headerAction("‹", 32) {
@@ -3967,7 +3967,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             prefs.edit().putFloat("${key}_size", (current + .5f).coerceIn(.75f, 18f)).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
-        headerAction(if (prefs.getBoolean("edit_gamepad_positions", false)) "SIMPAN" else "GESER", 52) {
+        headerAction(if (prefs.getBoolean("edit_gamepad_positions", false)) "SIMPAN" else "ATUR POSISI", 68) {
             prefs.edit().putBoolean("edit_gamepad_positions", !prefs.getBoolean("edit_gamepad_positions", false)).apply()
             content.removeAllViews()
             buildLandscapeActionDeck(content, laptopPalette())
