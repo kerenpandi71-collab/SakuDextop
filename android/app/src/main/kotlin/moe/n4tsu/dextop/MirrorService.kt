@@ -3824,12 +3824,69 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             }
             return group
         }
-        // MOBA layout: movement stick at the lower-left; no right analog.
-        addView(View(this@MirrorService), LinearLayout.LayoutParams(-1, 0, 1f))
-        addView(
-            stick("GERAK", PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_X, PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_Y),
-            LinearLayout.LayoutParams(-1, 0, 1.15f)
-        )
+        // MOBA layout: the move handle sits above the stick and can reposition
+        // the stick vertically within the left deck. Save the position per user.
+        val stickPrefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
+        val moveLayer = FrameLayout(this@MirrorService).apply {
+            clipChildren = false
+            clipToPadding = false
+        }
+        addView(moveLayer, LinearLayout.LayoutParams(-1, 0, 1f))
+        val moveStick = stick("GERAK", PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_X, PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_Y)
+        val moveStickHolder = FrameLayout(this@MirrorService).apply {
+            clipChildren = false
+            clipToPadding = false
+            addView(moveStick, FrameLayout.LayoutParams(-1, -1))
+        }
+        moveLayer.addView(moveStickHolder, FrameLayout.LayoutParams(-1, (moveLayer.height * .72f).roundToInt().coerceAtLeast(dp(180)), Gravity.BOTTOM))
+        val positionHandle = TextView(this@MirrorService).apply {
+            text = "↕  PINDAH ANALOG"
+            gravity = Gravity.CENTER
+            textSize = 10f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+            background = GradientDrawable().apply {
+                cornerRadius = dp(12).toFloat()
+                setColor(Color.argb(205, 22, 75, 105))
+                setStroke(dp(1), Color.rgb(90, 200, 255))
+            }
+            contentDescription = "Geser untuk mengatur posisi analog"
+        }
+        moveLayer.addView(positionHandle, FrameLayout.LayoutParams(-1, dp(34), Gravity.TOP))
+        var handleDownY = 0f
+        var stickOffset = stickPrefs.getFloat("left_stick_vertical", .12f).coerceIn(0f, .7f)
+        fun placeStick() {
+            val available = (moveLayer.height - moveStickHolder.height).coerceAtLeast(0)
+            val lp = moveStickHolder.layoutParams as? FrameLayout.LayoutParams ?: return
+            lp.gravity = Gravity.TOP
+            lp.topMargin = (available * stickOffset).roundToInt()
+            moveStickHolder.layoutParams = lp
+            positionHandle.translationY = (lp.topMargin + dp(4)).coerceAtMost((moveLayer.height - dp(38)).coerceAtLeast(0)).toFloat()
+        }
+        positionHandle.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> { handleDownY = event.rawY; true }
+                MotionEvent.ACTION_MOVE -> {
+                    val available = (moveLayer.height - moveStickHolder.height).coerceAtLeast(1)
+                    stickOffset = (stickOffset + (event.rawY - handleDownY) / available).coerceIn(0f, .7f)
+                    handleDownY = event.rawY
+                    stickPrefs.edit().putFloat("left_stick_vertical", stickOffset).apply()
+                    placeStick()
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> true
+                else -> true
+            }
+        }
+        moveLayer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            val lp = moveStickHolder.layoutParams as? FrameLayout.LayoutParams
+            if (lp != null) {
+                lp.height = (moveLayer.height * .72f).roundToInt().coerceAtLeast(dp(180))
+                moveStickHolder.layoutParams = lp
+                placeStick()
+            }
+        }
+        moveLayer.post { placeStick() }
     }
 
     private fun buildLandscapeActionDeck(content: LinearLayout, palette: LaptopPalette) {
