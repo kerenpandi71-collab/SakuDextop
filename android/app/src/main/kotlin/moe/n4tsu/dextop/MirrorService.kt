@@ -3750,9 +3750,16 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                     GamepadStickView(
                         this@MirrorService,
                         onChange = { x, y ->
-                            val rawX = if (kotlin.math.abs(x) < .035f) 0f else x
-                            val rawY = if (kotlin.math.abs(y) < .035f) 0f else y
-                            // Skip the heavy low-pass filter that makes movement lag behind the thumb.
+                            fun shapeAxis(value: Float): Float {
+                                val deadZone = .025f
+                                if (kotlin.math.abs(value) < deadZone) return 0f
+                                val normalized = ((kotlin.math.abs(value) - deadZone) / (1f - deadZone)).coerceIn(0f, 1f)
+                                val curved = normalized * .78f + normalized * normalized * normalized * .22f
+                                return kotlin.math.sign(value) * curved
+                            }
+                            // No frame-delayed smoothing: shape the live sample for finer center control.
+                            val rawX = shapeAxis(x)
+                            val rawY = shapeAxis(y)
                             smoothAxisX = rawX
                             smoothAxisY = rawY
                             injectVirtualGamepadAxis(axisX, (rawX.coerceIn(-1f, 1f) * 32767f).roundToInt())
@@ -3820,13 +3827,13 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         headerAction("−", 36) {
             val key = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
             val current = prefs.getFloat("${key}_size", 1.45f)
-            prefs.edit().putFloat("${key}_size", (current - .15f).coerceIn(.65f, 3.0f)).apply()
+            prefs.edit().putFloat("${key}_size", (current - .15f).coerceIn(.65f, 4.5f)).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
         headerAction("+", 48) {
             val key = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
             val current = prefs.getFloat("${key}_size", 1.45f)
-            prefs.edit().putFloat("${key}_size", (current + .25f).coerceIn(.65f, 3.0f)).apply()
+            prefs.edit().putFloat("${key}_size", (current + .25f).coerceIn(.65f, 4.5f)).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
         headerAction(if (prefs.getBoolean("edit_gamepad_positions", false)) "OK" else "ATUR", 48) {
@@ -3862,9 +3869,10 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             )
             specs.forEach { spec ->
                 val key = spec.label.replace(" ", "_")
-                val scale = prefs.getFloat("${key}_size", 1.45f).coerceIn(.65f, 3.0f)
-                val maxSize = (layer.width * .58f).roundToInt().coerceAtLeast(dp(36))
-                val size = (dp(spec.sizeDp) * scale).roundToInt().coerceIn(dp(32), maxSize)
+                val scale = prefs.getFloat("${key}_size", 1.45f).coerceIn(.65f, 4.5f)
+                // Allow much larger controls; the cap is per available panel width, not a shared fixed size.
+                val maxSize = (layer.width * .84f).roundToInt().coerceAtLeast(dp(48))
+                val size = (dp(spec.sizeDp) * scale).roundToInt().coerceIn(dp(36), maxSize)
                 val deckX = prefs.getFloat("${key}_deck_x", spec.x).coerceIn(0f, 1f)
                 val deckY = prefs.getFloat("${key}_deck_y", spec.y).coerceIn(0f, 1f)
                 val targetX = prefs.getFloat("${key}_x", spec.targetX).coerceIn(0f, 1f)
@@ -3954,8 +3962,11 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                 } else if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER") {
                                     // Hold and drag to aim a skill or Flicker, then release to cast.
                                     // Translate drag direction into the virtual-display coordinate space.
-                                    val dxInput = (event.rawX - downRawX) * targetWidth / layer.width.coerceAtLeast(1)
-                                    val dyInput = (event.rawY - downRawY) * targetHeight / layer.height.coerceAtLeast(1)
+                                    val inputSurface = surfaceView
+                                    val sourceWidth = (inputSurface?.width ?: layer.width).coerceAtLeast(1)
+                                    val sourceHeight = (inputSurface?.height ?: layer.height).coerceAtLeast(1)
+                                    val dxInput = (event.rawX - downRawX) * targetWidth / sourceWidth
+                                    val dyInput = (event.rawY - downRawY) * targetHeight / sourceHeight
                                     injectTouch(MotionEvent.ACTION_MOVE,
                                         (aimStartX + dxInput).coerceIn(0f, (targetWidth - 1).toFloat()),
                                         (aimStartY + dyInput).coerceIn(0f, (targetHeight - 1).toFloat()))
@@ -3974,10 +3985,13 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                     // Keep the original ACTION_DOWN anchor for the whole gesture.
                                     // The previous code reused downRawX/Y during MOVE, making the
                                     // release delta nearly zero and preventing reliable skill aiming.
+                                    val inputSurface = surfaceView
+                                    val sourceWidth = (inputSurface?.width ?: layer.width).coerceAtLeast(1)
+                                    val sourceHeight = (inputSurface?.height ?: layer.height).coerceAtLeast(1)
                                     val dxInput = if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER")
-                                        (event.rawX - downRawX) * targetWidth / layer.width.coerceAtLeast(1) else 0f
+                                        (event.rawX - downRawX) * targetWidth / sourceWidth else 0f
                                     val dyInput = if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER")
-                                        (event.rawY - downRawY) * targetHeight / layer.height.coerceAtLeast(1) else 0f
+                                        (event.rawY - downRawY) * targetHeight / sourceHeight else 0f
                                     injectTouch(MotionEvent.ACTION_UP,
                                         (aimStartX + dxInput).coerceIn(0f, (targetWidth - 1).toFloat()),
                                         (aimStartY + dyInput).coerceIn(0f, (targetHeight - 1).toFloat()))
