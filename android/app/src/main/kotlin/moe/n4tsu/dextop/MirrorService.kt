@@ -3771,9 +3771,9 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                             val nextY = (shapeAxis(y).coerceIn(-1f, 1f) * 32767f).roundToInt()
                             val now = SystemClock.uptimeMillis()
                             val changed = lastSentAxisX == Int.MIN_VALUE ||
-                                kotlin.math.abs(nextX - lastSentAxisX) >= 8 ||
-                                kotlin.math.abs(nextY - lastSentAxisY) >= 8
-                            if (changed && (lastAxisDispatchAt == 0L || now - lastAxisDispatchAt >= 8L)) {
+                                kotlin.math.abs(nextX - lastSentAxisX) >= 2 ||
+                                kotlin.math.abs(nextY - lastSentAxisY) >= 2
+                            if (changed && (lastAxisDispatchAt == 0L || now - lastAxisDispatchAt >= 4L)) {
                                 lastAxisDispatchAt = now
                                 if (lastSentAxisX == Int.MIN_VALUE || nextX != lastSentAxisX) {
                                     lastSentAxisX = nextX
@@ -3846,14 +3846,14 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         }
         headerAction("−", 36) {
             val key = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
-            val current = prefs.getFloat("${key}_size", 1.75f)
-            prefs.edit().putFloat("${key}_size", (current - .15f).coerceIn(.65f, 6f)).apply()
+            val current = prefs.getFloat("${key}_size", 2.25f)
+            prefs.edit().putFloat("${key}_size", (current - .15f).coerceIn(.5f, 10f)).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
         headerAction("+", 48) {
             val key = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
-            val current = prefs.getFloat("${key}_size", 1.75f)
-            prefs.edit().putFloat("${key}_size", (current + .35f).coerceIn(.65f, 6f)).apply()
+            val current = prefs.getFloat("${key}_size", 2.25f)
+            prefs.edit().putFloat("${key}_size", (current + .35f).coerceIn(.5f, 10f)).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
         headerAction(if (prefs.getBoolean("edit_gamepad_positions", false)) "OK" else "ATUR", 48) {
@@ -3889,9 +3889,10 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             )
             specs.forEach { spec ->
                 val key = spec.label.replace(" ", "_")
-                val scale = prefs.getFloat("${key}_size", 1.75f).coerceIn(.65f, 6f)
-                // Allow much larger controls; the cap is per available panel width, not a shared fixed size.
-                val maxSize = (layer.width * .92f).roundToInt().coerceAtLeast(dp(48))
+                val scale = prefs.getFloat("${key}_size", 2.25f).coerceIn(.5f, 10f)
+                // Each button has its own scale preference. Let the user enlarge individual
+                // controls substantially while keeping the circle inside the right-hand deck.
+                val maxSize = (layer.width * .98f).roundToInt().coerceAtLeast(dp(48))
                 val size = (dp(spec.sizeDp) * scale).roundToInt().coerceIn(dp(36), maxSize)
                 val deckX = prefs.getFloat("${key}_deck_x", spec.x).coerceIn(0f, 1f)
                 val deckY = prefs.getFloat("${key}_deck_y", spec.y).coerceIn(0f, 1f)
