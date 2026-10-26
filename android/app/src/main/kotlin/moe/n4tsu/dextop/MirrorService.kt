@@ -3752,10 +3752,11 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                         onChange = { x, y ->
                             val rawX = if (kotlin.math.abs(x) < .035f) 0f else x
                             val rawY = if (kotlin.math.abs(y) < .035f) 0f else y
-                            smoothAxisX = smoothAxisX * .28f + rawX * .72f
-                            smoothAxisY = smoothAxisY * .28f + rawY * .72f
-                            injectVirtualGamepadAxis(axisX, (smoothAxisX.coerceIn(-1f, 1f) * 32767f).roundToInt())
-                            injectVirtualGamepadAxis(axisY, (smoothAxisY.coerceIn(-1f, 1f) * 32767f).roundToInt())
+                            // Skip the heavy low-pass filter that makes movement lag behind the thumb.
+                            smoothAxisX = rawX
+                            smoothAxisY = rawY
+                            injectVirtualGamepadAxis(axisX, (rawX.coerceIn(-1f, 1f) * 32767f).roundToInt())
+                            injectVirtualGamepadAxis(axisY, (rawY.coerceIn(-1f, 1f) * 32767f).roundToInt())
                         },
                         onRelease = {
                             smoothAxisX = 0f
@@ -3804,15 +3805,28 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 leftMargin = dp(2); rightMargin = dp(2)
             })
         }
-        // Start a little larger and make the plus control increase size more noticeably.
+        val buttonKeys = listOf("FIRE_ALL", "REGEN", "FLICKER", "BUFF", "S1", "S2", "S3", "CC", "CONCEAL", "ATTACK")
+        val selectedKey = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
+        headerAction("‹", 32) {
+            val index = buttonKeys.indexOf(prefs.getString("selected_gamepad_button", "S1")).coerceAtLeast(0)
+            prefs.edit().putString("selected_gamepad_button", buttonKeys[(index - 1 + buttonKeys.size) % buttonKeys.size]).apply()
+            content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
+        }
+        headerAction(selectedKey.replace("_", " "), 66) {
+            val index = buttonKeys.indexOf(prefs.getString("selected_gamepad_button", "S1")).coerceAtLeast(0)
+            prefs.edit().putString("selected_gamepad_button", buttonKeys[(index + 1) % buttonKeys.size]).apply()
+            content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
+        }
         headerAction("−", 36) {
-            val scale = (prefs.getFloat("button_scale", 1.25f) - .15f).coerceIn(.55f, 2.2f)
-            prefs.edit().putFloat("button_scale", scale).apply()
+            val key = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
+            val current = prefs.getFloat("${key}_size", 1.45f)
+            prefs.edit().putFloat("${key}_size", (current - .15f).coerceIn(.65f, 3.0f)).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
         headerAction("+", 48) {
-            val scale = (prefs.getFloat("button_scale", 1.25f) + .25f).coerceIn(.55f, 2.2f)
-            prefs.edit().putFloat("button_scale", scale).apply()
+            val key = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
+            val current = prefs.getFloat("${key}_size", 1.45f)
+            prefs.edit().putFloat("${key}_size", (current + .25f).coerceIn(.65f, 3.0f)).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
         headerAction(if (prefs.getBoolean("edit_gamepad_positions", false)) "OK" else "ATUR", 48) {
@@ -3848,15 +3862,35 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             )
             specs.forEach { spec ->
                 val key = spec.label.replace(" ", "_")
-                val scale = prefs.getFloat("button_scale", 1.25f).coerceIn(.55f, 2.2f)
-                val maxSize = (layer.width * .44f).roundToInt().coerceAtLeast(dp(30))
-                val size = (dp(spec.sizeDp) * scale).roundToInt().coerceIn(dp(28), maxSize)
+                val scale = prefs.getFloat("${key}_size", 1.45f).coerceIn(.65f, 3.0f)
+                val maxSize = (layer.width * .58f).roundToInt().coerceAtLeast(dp(36))
+                val size = (dp(spec.sizeDp) * scale).roundToInt().coerceIn(dp(32), maxSize)
                 val deckX = prefs.getFloat("${key}_deck_x", spec.x).coerceIn(0f, 1f)
                 val deckY = prefs.getFloat("${key}_deck_y", spec.y).coerceIn(0f, 1f)
                 val targetX = prefs.getFloat("${key}_x", spec.targetX).coerceIn(0f, 1f)
                 val targetY = prefs.getFloat("${key}_y", spec.targetY).coerceIn(0f, 1f)
                 val angle = prefs.getFloat("${key}_rotation", if (key == "ATTACK") 45f else 0f)
                 val holder = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
+                val aimRing = View(this).apply {
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(Color.TRANSPARENT)
+                        setStroke(dp(2), Color.argb(230, spec.color))
+                    }
+                    visibility = View.GONE
+                    isClickable = false
+                    isFocusable = false
+                }
+                holder.addView(aimRing, FrameLayout.LayoutParams((size * 2.6f).roundToInt(), (size * 2.6f).roundToInt(), Gravity.CENTER))
+                val aimDot = View(this).apply {
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(Color.argb(220, spec.color))
+                    }
+                    visibility = View.GONE
+                    isClickable = false
+                }
+                holder.addView(aimDot, FrameLayout.LayoutParams(dp(10), dp(10), Gravity.CENTER))
                 val circle = TextView(this).apply {
                     gravity = Gravity.CENTER
                     text = spec.icon
@@ -3892,7 +3926,14 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                 view.scaleX = .96f; view.scaleY = .96f
                                 aimStartX = targetX * (targetWidth - 1)
                                 aimStartY = targetY * (targetHeight - 1)
-                                if (!editPositions) injectTouch(MotionEvent.ACTION_DOWN, aimStartX, aimStartY)
+                                if (!editPositions) {
+                                    injectTouch(MotionEvent.ACTION_DOWN, aimStartX, aimStartY)
+                                    if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER") {
+                                        aimRing.visibility = View.VISIBLE
+                                        aimDot.visibility = View.VISIBLE
+                                        aimDot.translationX = 0f; aimDot.translationY = 0f
+                                    }
+                                }
                                 true
                             }
                             MotionEvent.ACTION_MOVE -> {
@@ -3918,6 +3959,8 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                     injectTouch(MotionEvent.ACTION_MOVE,
                                         (aimStartX + dxInput).coerceIn(0f, (targetWidth - 1).toFloat()),
                                         (aimStartY + dyInput).coerceIn(0f, (targetHeight - 1).toFloat()))
+                                    aimDot.translationX = dx.coerceIn((-size).toFloat(), size.toFloat())
+                                    aimDot.translationY = dy.coerceIn((-size).toFloat(), size.toFloat())
                                 }
                                 true
                             }
@@ -3939,6 +3982,8 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                         (aimStartX + dxInput).coerceIn(0f, (targetWidth - 1).toFloat()),
                                         (aimStartY + dyInput).coerceIn(0f, (targetHeight - 1).toFloat()))
                                 }
+                                aimRing.visibility = View.GONE
+                                aimDot.visibility = View.GONE
                                 view.scaleX = 1f; view.scaleY = 1f
                                 true
                             }
