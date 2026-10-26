@@ -8365,7 +8365,17 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             specs.forEach { spec ->
                 val key = spec.first
                 val prefKey = key.replace(" ", "_")
-                val size = dp(when (key) { "S3", "ATTACK" -> 80; "S1", "S2" -> 60; else -> 52 })
+                val baseSizeDp = when (key) {
+                    "S3", "ATTACK" -> 88
+                    "S1", "S2", "FLICKER" -> 72
+                    "BUFF", "CONCEAL", "CC" -> 64
+                    else -> 60
+                }
+                // Use the same independent per-button size setting as the right-hand deck.
+                // This makes the mapping editor accurately preview the size users selected.
+                val sizeScale = prefs.getFloat("${prefKey}_size", 2.25f).coerceIn(.5f, 10f) / 2.25f
+                val size = (dp(baseSizeDp) * sizeScale).roundToInt()
+                    .coerceIn(dp(44), (min(overlay.width, overlay.height) * .42f).roundToInt().coerceAtLeast(dp(44)))
                 val defaults = when (key) {
                     "FIRE ALL" -> .55f to .86f
                     "REGEN" -> .68f to .86f
@@ -8383,8 +8393,13 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 val x = (prefs.getFloat("${prefKey}_x", defaultX) * overlay.width - size / 2f).roundToInt().coerceIn(0, (overlay.width-size).coerceAtLeast(0))
                 val y = (prefs.getFloat("${prefKey}_y", defaultY) * overlay.height - size / 2f).roundToInt().coerceIn(dp(48), (overlay.height-size).coerceAtLeast(dp(48)))
                 val trigger = TextView(this).apply {
-                    text = "${spec.second}\n$key"; gravity = Gravity.CENTER; textSize = 11f; typeface = Typeface.DEFAULT_BOLD; setTextColor(spec.third)
-                    background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.argb(210,16,32,58)); setStroke(dp(2), spec.third) }
+                    text = "${spec.second}\n$key"; gravity = Gravity.CENTER; textSize = if (key == "ATTACK" || key == "S3") 16f else 13f; typeface = Typeface.DEFAULT_BOLD; setTextColor(spec.third)
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(Color.argb(220, 11, 24, 42))
+                        setStroke(dp(if (key == "S3" || key == "ATTACK") 3 else 2), spec.third)
+                    }
+                    setShadowLayer(dp(8).toFloat(), 0f, 0f, spec.third)
                     elevation = dp(8).toFloat()
                     var downX = 0f; var downY = 0f; var startX = x; var startY = y; var moved = false; var lastTapAt = 0L
                     rotation = prefs.getFloat("${prefKey}_rotation", if (key == "ATTACK") 45f else 0f)
