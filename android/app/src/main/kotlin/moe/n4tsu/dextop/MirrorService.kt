@@ -3770,20 +3770,19 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                             val nextX = (shapeAxis(x).coerceIn(-1f, 1f) * 32767f).roundToInt()
                             val nextY = (shapeAxis(y).coerceIn(-1f, 1f) * 32767f).roundToInt()
                             val now = SystemClock.uptimeMillis()
-                            val changed = lastSentAxisX == Int.MIN_VALUE ||
-                                kotlin.math.abs(nextX - lastSentAxisX) >= 2 ||
-                                kotlin.math.abs(nextY - lastSentAxisY) >= 2
-                            if (changed && (lastAxisDispatchAt == 0L || now - lastAxisDispatchAt >= 4L)) {
-                                lastAxisDispatchAt = now
-                                if (lastSentAxisX == Int.MIN_VALUE || nextX != lastSentAxisX) {
-                                    lastSentAxisX = nextX
-                                    injectVirtualGamepadAxis(axisX, nextX)
-                                }
-                                if (lastSentAxisY == Int.MIN_VALUE || nextY != lastSentAxisY) {
-                                    lastSentAxisY = nextY
-                                    injectVirtualGamepadAxis(axisY, nextY)
-                                }
+                            // Do not drop intermediate samples behind a timer gate: that
+                            // creates visible angular stepping during circular cable aiming.
+                            // Suppress only identical quantized values and send each new axis
+                            // value immediately so the input dispatcher can preserve the path.
+                            if (lastSentAxisX == Int.MIN_VALUE || nextX != lastSentAxisX) {
+                                lastSentAxisX = nextX
+                                injectVirtualGamepadAxis(axisX, nextX)
                             }
+                            if (lastSentAxisY == Int.MIN_VALUE || nextY != lastSentAxisY) {
+                                lastSentAxisY = nextY
+                                injectVirtualGamepadAxis(axisY, nextY)
+                            }
+                            lastAxisDispatchAt = now
                         },
                         onRelease = {
                             lastSentAxisX = 0
@@ -3986,11 +3985,14 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                     val inputSurface = surfaceView
                                     val sourceWidth = (inputSurface?.width ?: layer.width).coerceAtLeast(1)
                                     val sourceHeight = (inputSurface?.height ?: layer.height).coerceAtLeast(1)
-                                    val rawDx = (event.rawX - downRawX) * targetWidth / sourceWidth
-                                    val rawDy = (event.rawY - downRawY) * targetHeight / sourceHeight
-                                    // Keep the aim point inside the visible circular skill boundary.
-                                    // Radial clamping prevents diagonal drags from exceeding the ring radius.
-                                    val maxAimRadius = size * 1.5f * targetWidth / sourceWidth
+                                    val scaleX = targetWidth.toFloat() / sourceWidth
+                                    val scaleY = targetHeight.toFloat() / sourceHeight
+                                    val rawDx = (event.rawX - downRawX) * scaleX
+                                    val rawDy = (event.rawY - downRawY) * scaleY
+                                    // Keep the aiming point inside a true circular boundary even
+                                    // when the virtual display and visible host pane have different
+                                    // aspect ratios. Use the smaller axis scale for the radius.
+                                    val maxAimRadius = size * 1.5f * min(scaleX, scaleY)
                                     val distance = hypot(rawDx, rawDy)
                                     val aimScale = if (distance > maxAimRadius && distance > 0f) maxAimRadius / distance else 1f
                                     val dxInput = rawDx * aimScale
@@ -3998,6 +4000,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                     injectTouch(MotionEvent.ACTION_MOVE,
                                         (aimStartX + dxInput).coerceIn(0f, (targetWidth - 1).toFloat()),
                                         (aimStartY + dyInput).coerceIn(0f, (targetHeight - 1).toFloat()))
+                                    // Render the visible dot in host-view pixels, not virtual pixels.
                                     aimDot.translationX = (dx * aimScale).coerceIn((-size * 1.5f), size * 1.5f)
                                     aimDot.translationY = (dy * aimScale).coerceIn((-size * 1.5f), size * 1.5f)
                                 }
@@ -4017,9 +4020,11 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                     val sourceWidth = (inputSurface?.width ?: layer.width).coerceAtLeast(1)
                                     val sourceHeight = (inputSurface?.height ?: layer.height).coerceAtLeast(1)
                                     val isAimButton = key == "S1" || key == "S2" || key == "S3" || key == "FLICKER"
-                                    val rawDx = if (isAimButton) (event.rawX - downRawX) * targetWidth / sourceWidth else 0f
-                                    val rawDy = if (isAimButton) (event.rawY - downRawY) * targetHeight / sourceHeight else 0f
-                                    val maxAimRadius = size * 1.5f * targetWidth / sourceWidth
+                                    val scaleX = targetWidth.toFloat() / sourceWidth
+                                    val scaleY = targetHeight.toFloat() / sourceHeight
+                                    val rawDx = if (isAimButton) (event.rawX - downRawX) * scaleX else 0f
+                                    val rawDy = if (isAimButton) (event.rawY - downRawY) * scaleY else 0f
+                                    val maxAimRadius = size * 1.5f * min(scaleX, scaleY)
                                     val distance = hypot(rawDx, rawDy)
                                     val aimScale = if (distance > maxAimRadius && distance > 0f) maxAimRadius / distance else 1f
                                     val dxInput = rawDx * aimScale
