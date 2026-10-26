@@ -3810,16 +3810,17 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             // This prevents screen-wide mapping positions from collapsing all controls
             // into the narrow right-hand gamepad panel.
             val specs = listOf(
-                SkillSpec("FIRE ALL", "❄", Color.rgb(90,180,229), 36, .18f, .84f, .13f, .84f),
-                SkillSpec("REGEN", "✚", Color.rgb(108,224,108), 36, .76f, .84f, .29f, .84f),
-                SkillSpec("FLICKER", "⚡", Color.rgb(255,204,0), 38, .18f, .61f, .45f, .84f),
-                SkillSpec("BUFF", "◆", Color.rgb(102,179,255), 38, .76f, .61f, .62f, .82f),
-                SkillSpec("S1", "▲", Color.rgb(255,157,0), 40, .25f, .38f, .55f, .72f),
-                SkillSpec("S2", "◆", Color.rgb(0,229,255), 40, .54f, .30f, .72f, .62f),
-                SkillSpec("S3", "✦", Color.rgb(196,110,255), 52, .79f, .49f, .84f, .80f),
-                SkillSpec("CC", "✦", Color.rgb(163,102,255), 34, .42f, .48f, .72f, .42f),
-                SkillSpec("CONCEAL", "◉", Color.rgb(77,255,234), 34, .78f, .25f, .91f, .43f),
-                SkillSpec("ATTACK", "⚔", Color.rgb(153,204,255), 58, .82f, .83f, .94f, .88f)
+                // Spread controls across the narrow panel by default; every position remains draggable in ATUR mode.
+                SkillSpec("FIRE ALL", "❄", Color.rgb(90,180,229), 36, .20f, .20f, .13f, .84f),
+                SkillSpec("REGEN", "✚", Color.rgb(108,224,108), 36, .72f, .20f, .29f, .84f),
+                SkillSpec("FLICKER", "⚡", Color.rgb(255,204,0), 38, .20f, .43f, .45f, .84f),
+                SkillSpec("BUFF", "◆", Color.rgb(102,179,255), 38, .72f, .43f, .62f, .82f),
+                SkillSpec("S1", "▲", Color.rgb(255,157,0), 40, .20f, .66f, .55f, .72f),
+                SkillSpec("S2", "◆", Color.rgb(0,229,255), 40, .50f, .66f, .72f, .62f),
+                SkillSpec("S3", "✦", Color.rgb(196,110,255), 52, .80f, .66f, .84f, .80f),
+                SkillSpec("CC", "✦", Color.rgb(163,102,255), 34, .20f, .88f, .72f, .42f),
+                SkillSpec("CONCEAL", "◉", Color.rgb(77,255,234), 34, .52f, .88f, .91f, .43f),
+                SkillSpec("ATTACK", "⚔", Color.rgb(153,204,255), 58, .82f, .88f, .94f, .88f)
             )
             specs.forEach { spec ->
                 val key = spec.label.replace(" ", "_")
@@ -3876,6 +3877,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                     lp.leftMargin = (lp.leftMargin + dx.roundToInt()).coerceIn(0, (layer.width - holder.width).coerceAtLeast(0))
                                     lp.topMargin = (lp.topMargin + dy.roundToInt()).coerceIn(0, (layer.height - holder.height).coerceAtLeast(0))
                                     holder.layoutParams = lp
+                                    // Update the drag anchor only while repositioning the overlay.
                                     downRawX = event.rawX
                                     downRawY = event.rawY
                                     prefs.edit()
@@ -3884,8 +3886,9 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                         .apply()
                                 } else if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER") {
                                     // Hold and drag to aim a skill or Flicker, then release to cast.
-                                    val dxInput = dx * targetWidth / layer.width.coerceAtLeast(1)
-                                    val dyInput = dy * targetHeight / layer.height.coerceAtLeast(1)
+                                    // Translate drag direction into the virtual-display coordinate space.
+                                    val dxInput = (event.rawX - downRawX) * targetWidth / layer.width.coerceAtLeast(1)
+                                    val dyInput = (event.rawY - downRawY) * targetHeight / layer.height.coerceAtLeast(1)
                                     injectTouch(MotionEvent.ACTION_MOVE,
                                         (aimStartX + dxInput).coerceIn(0f, (targetWidth - 1).toFloat()),
                                         (aimStartY + dyInput).coerceIn(0f, (targetHeight - 1).toFloat()))
@@ -3899,6 +3902,9 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                         .putFloat("${key}_deck_y", ((lp.topMargin + holder.height / 2f) / layer.height.coerceAtLeast(1)).coerceIn(0f, 1f))
                                         .apply()
                                 } else {
+                                    // Keep the original ACTION_DOWN anchor for the whole gesture.
+                                    // The previous code reused downRawX/Y during MOVE, making the
+                                    // release delta nearly zero and preventing reliable skill aiming.
                                     val dxInput = if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER")
                                         (event.rawX - downRawX) * targetWidth / layer.width.coerceAtLeast(1) else 0f
                                     val dyInput = if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER")
