@@ -3781,14 +3781,27 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
     }
 
     private fun buildLandscapeActionDeck(content: LinearLayout, palette: LaptopPalette) {
-        content.addView(TextView(this).apply {
-            text = "SAKU MOBA"; gravity = Gravity.CENTER; setTextColor(palette.text); textSize = 10f
-        }, LinearLayout.LayoutParams(-1, dp(22)))
+        val prefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
+        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        header.addView(TextView(this).apply {
+            text = "SAKU MOBA"; gravity = Gravity.CENTER_VERTICAL; setTextColor(palette.text); textSize = 10f
+        }, LinearLayout.LayoutParams(0, dp(28), 1f))
+        header.addView(TextView(this).apply {
+            text = if (prefs.getBoolean("edit_gamepad_positions", false)) "SELESAI" else "ATUR"
+            gravity = Gravity.CENTER; setTextColor(Color.rgb(100,220,255)); textSize = 10f; typeface = Typeface.DEFAULT_BOLD
+            setPadding(dp(6), 0, dp(6), 0)
+            setOnClickListener {
+                prefs.edit().putBoolean("edit_gamepad_positions", !prefs.getBoolean("edit_gamepad_positions", false)).apply()
+                content.removeAllViews()
+                buildLandscapeActionDeck(content, laptopPalette())
+            }
+        }, LinearLayout.LayoutParams(dp(64), dp(28)))
+        content.addView(header, LinearLayout.LayoutParams(-1, dp(28)))
         val layer = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
         content.addView(layer, LinearLayout.LayoutParams(-1, 0, 1f))
         layer.post {
             if (layer.width <= 0 || layer.height <= 0) return@post
-            val prefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
+            val editPositions = prefs.getBoolean("edit_gamepad_positions", false)
             data class SkillSpec(
                 val label: String, val icon: String, val color: Int, val sizeDp: Int,
                 val x: Float, val y: Float, val targetX: Float, val targetY: Float
@@ -3797,16 +3810,16 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             // This prevents screen-wide mapping positions from collapsing all controls
             // into the narrow right-hand gamepad panel.
             val specs = listOf(
-                SkillSpec("FIRE ALL", "❄", Color.rgb(90,180,229), 44, .12f, .84f, .13f, .84f),
-                SkillSpec("REGEN", "✚", Color.rgb(108,224,108), 44, .31f, .84f, .29f, .84f),
-                SkillSpec("FLICKER", "⚡", Color.rgb(255,204,0), 46, .50f, .84f, .45f, .84f),
-                SkillSpec("BUFF", "◆", Color.rgb(102,179,255), 46, .69f, .82f, .62f, .82f),
-                SkillSpec("S1", "▲", Color.rgb(255,157,0), 48, .40f, .62f, .55f, .72f),
-                SkillSpec("S2", "◆", Color.rgb(0,229,255), 48, .62f, .52f, .72f, .62f),
-                SkillSpec("S3", "✦", Color.rgb(196,110,255), 64, .82f, .72f, .84f, .80f),
-                SkillSpec("CC", "✦", Color.rgb(163,102,255), 42, .62f, .32f, .72f, .42f),
-                SkillSpec("CONCEAL", "◉", Color.rgb(77,255,234), 42, .84f, .32f, .91f, .43f),
-                SkillSpec("ATTACK", "⚔", Color.rgb(153,204,255), 70, .86f, .88f, .94f, .88f)
+                SkillSpec("FIRE ALL", "❄", Color.rgb(90,180,229), 36, .18f, .84f, .13f, .84f),
+                SkillSpec("REGEN", "✚", Color.rgb(108,224,108), 36, .76f, .84f, .29f, .84f),
+                SkillSpec("FLICKER", "⚡", Color.rgb(255,204,0), 38, .18f, .61f, .45f, .84f),
+                SkillSpec("BUFF", "◆", Color.rgb(102,179,255), 38, .76f, .61f, .62f, .82f),
+                SkillSpec("S1", "▲", Color.rgb(255,157,0), 40, .25f, .38f, .55f, .72f),
+                SkillSpec("S2", "◆", Color.rgb(0,229,255), 40, .54f, .30f, .72f, .62f),
+                SkillSpec("S3", "✦", Color.rgb(196,110,255), 52, .79f, .49f, .84f, .80f),
+                SkillSpec("CC", "✦", Color.rgb(163,102,255), 34, .42f, .48f, .72f, .42f),
+                SkillSpec("CONCEAL", "◉", Color.rgb(77,255,234), 34, .78f, .25f, .91f, .43f),
+                SkillSpec("ATTACK", "⚔", Color.rgb(153,204,255), 58, .82f, .83f, .94f, .88f)
             )
             specs.forEach { spec ->
                 val key = spec.label.replace(" ", "_")
@@ -3852,14 +3865,14 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                 view.scaleX = .96f; view.scaleY = .96f
                                 aimStartX = targetX * (targetWidth - 1)
                                 aimStartY = targetY * (targetHeight - 1)
-                                if (!overlayLayoutEditing) injectTouch(MotionEvent.ACTION_DOWN, aimStartX, aimStartY)
+                                if (!editPositions) injectTouch(MotionEvent.ACTION_DOWN, aimStartX, aimStartY)
                                 true
                             }
                             MotionEvent.ACTION_MOVE -> {
                                 val dx = event.rawX - downRawX
                                 val dy = event.rawY - downRawY
                                 if (kotlin.math.abs(dx) > dp(3) || kotlin.math.abs(dy) > dp(3)) moved = true
-                                if (overlayLayoutEditing && lp != null) {
+                                if (editPositions && lp != null) {
                                     lp.leftMargin = (lp.leftMargin + dx.roundToInt()).coerceIn(0, (layer.width - holder.width).coerceAtLeast(0))
                                     lp.topMargin = (lp.topMargin + dy.roundToInt()).coerceIn(0, (layer.height - holder.height).coerceAtLeast(0))
                                     holder.layoutParams = lp
@@ -3880,7 +3893,12 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                 true
                             }
                             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                                if (!overlayLayoutEditing) {
+                                if (editPositions && lp != null) {
+                                    prefs.edit()
+                                        .putFloat("${key}_deck_x", ((lp.leftMargin + holder.width / 2f) / layer.width.coerceAtLeast(1)).coerceIn(0f, 1f))
+                                        .putFloat("${key}_deck_y", ((lp.topMargin + holder.height / 2f) / layer.height.coerceAtLeast(1)).coerceIn(0f, 1f))
+                                        .apply()
+                                } else {
                                     val dxInput = if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER")
                                         (event.rawX - downRawX) * targetWidth / layer.width.coerceAtLeast(1) else 0f
                                     val dyInput = if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER")
