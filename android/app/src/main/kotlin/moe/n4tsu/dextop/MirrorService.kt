@@ -3741,6 +3741,10 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         setOnTouchListener { _, _ -> true }
         var lastSentAxisX = Int.MIN_VALUE
         var lastSentAxisY = Int.MIN_VALUE
+        // Cap binder/uinput axis traffic to roughly 120 Hz. Tiny raw touch deltas
+        // previously generated two IPC writes per MotionEvent and could backlog
+        // the input service during fast circular movement (notably Fanny cables).
+        var lastAxisDispatchAt = 0L
         fun stick(label: String, axisX: Int, axisY: Int): View {
             val group = LinearLayout(this@MirrorService).apply {
                 orientation = LinearLayout.VERTICAL
@@ -3765,13 +3769,20 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                             // A large threshold visibly quantizes the stick, especially during Fanny cable aiming.
                             val nextX = (shapeAxis(x).coerceIn(-1f, 1f) * 32767f).roundToInt()
                             val nextY = (shapeAxis(y).coerceIn(-1f, 1f) * 32767f).roundToInt()
-                            if (lastSentAxisX == Int.MIN_VALUE || kotlin.math.abs(nextX - lastSentAxisX) >= 1) {
-                                lastSentAxisX = nextX
-                                injectVirtualGamepadAxis(axisX, nextX)
-                            }
-                            if (lastSentAxisY == Int.MIN_VALUE || kotlin.math.abs(nextY - lastSentAxisY) >= 1) {
-                                lastSentAxisY = nextY
-                                injectVirtualGamepadAxis(axisY, nextY)
+                            val now = SystemClock.uptimeMillis()
+                            val changed = lastSentAxisX == Int.MIN_VALUE ||
+                                kotlin.math.abs(nextX - lastSentAxisX) >= 8 ||
+                                kotlin.math.abs(nextY - lastSentAxisY) >= 8
+                            if (changed && (lastAxisDispatchAt == 0L || now - lastAxisDispatchAt >= 8L)) {
+                                lastAxisDispatchAt = now
+                                if (lastSentAxisX == Int.MIN_VALUE || nextX != lastSentAxisX) {
+                                    lastSentAxisX = nextX
+                                    injectVirtualGamepadAxis(axisX, nextX)
+                                }
+                                if (lastSentAxisY == Int.MIN_VALUE || nextY != lastSentAxisY) {
+                                    lastSentAxisY = nextY
+                                    injectVirtualGamepadAxis(axisY, nextY)
+                                }
                             }
                         },
                         onRelease = {
