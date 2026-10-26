@@ -3746,7 +3746,6 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         var pendingCodeX = PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_X
         var pendingCodeY = PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_Y
         var axisDispatchPosted = false
-        var lastAxisDispatchAt = 0L
         val axisDispatchHandler = Handler(Looper.getMainLooper())
         val dispatchPendingAxes = Runnable {
             axisDispatchPosted = false
@@ -3760,19 +3759,18 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 lastSentAxisY = y
                 injectVirtualGamepadAxis(pendingCodeY, y)
             }
-            lastAxisDispatchAt = SystemClock.uptimeMillis()
         }
         fun queueAxes(codeX: Int, codeY: Int, x: Int, y: Int) {
             pendingCodeX = codeX
             pendingCodeY = codeY
             pendingAxisX = x
             pendingAxisY = y
-            val elapsed = SystemClock.uptimeMillis() - lastAxisDispatchAt
+            // Coalesce only while a dispatch is already queued. Do not impose a
+            // fixed 8 ms timer: that timer adds visible delay during rapid
+            // direction reversals (for example, Fanny cable turns).
             if (!axisDispatchPosted) {
                 axisDispatchPosted = true
-                val waitMs = (8L - elapsed).coerceAtLeast(0L)
-                if (waitMs == 0L) axisDispatchHandler.post(dispatchPendingAxes)
-                else axisDispatchHandler.postDelayed(dispatchPendingAxes, waitMs)
+                axisDispatchHandler.post(dispatchPendingAxes)
             }
         }
         fun stick(label: String, axisX: Int, axisY: Int): View {
@@ -3811,7 +3809,6 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                             pendingAxisY = 0
                             lastSentAxisX = 0
                             lastSentAxisY = 0
-                            lastAxisDispatchAt = SystemClock.uptimeMillis()
                             injectVirtualGamepadAxis(axisX, 0)
                             injectVirtualGamepadAxis(axisY, 0)
                         },
