@@ -3765,11 +3765,11 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                             // A large threshold visibly quantizes the stick, especially during Fanny cable aiming.
                             val nextX = (shapeAxis(x).coerceIn(-1f, 1f) * 32767f).roundToInt()
                             val nextY = (shapeAxis(y).coerceIn(-1f, 1f) * 32767f).roundToInt()
-                            if (lastSentAxisX == Int.MIN_VALUE || kotlin.math.abs(nextX - lastSentAxisX) >= 8) {
+                            if (lastSentAxisX == Int.MIN_VALUE || kotlin.math.abs(nextX - lastSentAxisX) >= 1) {
                                 lastSentAxisX = nextX
                                 injectVirtualGamepadAxis(axisX, nextX)
                             }
-                            if (lastSentAxisY == Int.MIN_VALUE || kotlin.math.abs(nextY - lastSentAxisY) >= 8) {
+                            if (lastSentAxisY == Int.MIN_VALUE || kotlin.math.abs(nextY - lastSentAxisY) >= 1) {
                                 lastSentAxisY = nextY
                                 injectVirtualGamepadAxis(axisY, nextY)
                             }
@@ -3835,14 +3835,14 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         }
         headerAction("−", 36) {
             val key = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
-            val current = prefs.getFloat("${key}_size", 1.45f)
-            prefs.edit().putFloat("${key}_size", (current - .15f).coerceIn(.65f, 4.5f)).apply()
+            val current = prefs.getFloat("${key}_size", 1.75f)
+            prefs.edit().putFloat("${key}_size", (current - .15f).coerceIn(.65f, 6f)).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
         headerAction("+", 48) {
             val key = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
-            val current = prefs.getFloat("${key}_size", 1.45f)
-            prefs.edit().putFloat("${key}_size", (current + .25f).coerceIn(.65f, 4.5f)).apply()
+            val current = prefs.getFloat("${key}_size", 1.75f)
+            prefs.edit().putFloat("${key}_size", (current + .35f).coerceIn(.65f, 6f)).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
         headerAction(if (prefs.getBoolean("edit_gamepad_positions", false)) "OK" else "ATUR", 48) {
@@ -3878,9 +3878,9 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             )
             specs.forEach { spec ->
                 val key = spec.label.replace(" ", "_")
-                val scale = prefs.getFloat("${key}_size", 1.45f).coerceIn(.65f, 4.5f)
+                val scale = prefs.getFloat("${key}_size", 1.75f).coerceIn(.65f, 6f)
                 // Allow much larger controls; the cap is per available panel width, not a shared fixed size.
-                val maxSize = (layer.width * .84f).roundToInt().coerceAtLeast(dp(48))
+                val maxSize = (layer.width * .92f).roundToInt().coerceAtLeast(dp(48))
                 val size = (dp(spec.sizeDp) * scale).roundToInt().coerceIn(dp(36), maxSize)
                 val deckX = prefs.getFloat("${key}_deck_x", spec.x).coerceIn(0f, 1f)
                 val deckY = prefs.getFloat("${key}_deck_y", spec.y).coerceIn(0f, 1f)
@@ -3898,7 +3898,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                     isClickable = false
                     isFocusable = false
                 }
-                holder.addView(aimRing, FrameLayout.LayoutParams((size * 2.6f).roundToInt(), (size * 2.6f).roundToInt(), Gravity.CENTER))
+                holder.addView(aimRing, FrameLayout.LayoutParams((size * 3.0f).roundToInt(), (size * 3.0f).roundToInt(), Gravity.CENTER))
                 val aimDot = View(this).apply {
                     background = GradientDrawable().apply {
                         shape = GradientDrawable.OVAL
@@ -3974,13 +3974,20 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                     val inputSurface = surfaceView
                                     val sourceWidth = (inputSurface?.width ?: layer.width).coerceAtLeast(1)
                                     val sourceHeight = (inputSurface?.height ?: layer.height).coerceAtLeast(1)
-                                    val dxInput = (event.rawX - downRawX) * targetWidth / sourceWidth
-                                    val dyInput = (event.rawY - downRawY) * targetHeight / sourceHeight
+                                    val rawDx = (event.rawX - downRawX) * targetWidth / sourceWidth
+                                    val rawDy = (event.rawY - downRawY) * targetHeight / sourceHeight
+                                    // Keep the aim point inside the visible circular skill boundary.
+                                    // Radial clamping prevents diagonal drags from exceeding the ring radius.
+                                    val maxAimRadius = size * 1.5f * targetWidth / sourceWidth
+                                    val distance = hypot(rawDx, rawDy)
+                                    val aimScale = if (distance > maxAimRadius && distance > 0f) maxAimRadius / distance else 1f
+                                    val dxInput = rawDx * aimScale
+                                    val dyInput = rawDy * aimScale
                                     injectTouch(MotionEvent.ACTION_MOVE,
                                         (aimStartX + dxInput).coerceIn(0f, (targetWidth - 1).toFloat()),
                                         (aimStartY + dyInput).coerceIn(0f, (targetHeight - 1).toFloat()))
-                                    aimDot.translationX = dx.coerceIn((-size).toFloat(), size.toFloat())
-                                    aimDot.translationY = dy.coerceIn((-size).toFloat(), size.toFloat())
+                                    aimDot.translationX = (dx * aimScale).coerceIn((-size * 1.5f), size * 1.5f)
+                                    aimDot.translationY = (dy * aimScale).coerceIn((-size * 1.5f), size * 1.5f)
                                 }
                                 true
                             }
@@ -3997,10 +4004,14 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                                     val inputSurface = surfaceView
                                     val sourceWidth = (inputSurface?.width ?: layer.width).coerceAtLeast(1)
                                     val sourceHeight = (inputSurface?.height ?: layer.height).coerceAtLeast(1)
-                                    val dxInput = if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER")
-                                        (event.rawX - downRawX) * targetWidth / sourceWidth else 0f
-                                    val dyInput = if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER")
-                                        (event.rawY - downRawY) * targetHeight / sourceHeight else 0f
+                                    val isAimButton = key == "S1" || key == "S2" || key == "S3" || key == "FLICKER"
+                                    val rawDx = if (isAimButton) (event.rawX - downRawX) * targetWidth / sourceWidth else 0f
+                                    val rawDy = if (isAimButton) (event.rawY - downRawY) * targetHeight / sourceHeight else 0f
+                                    val maxAimRadius = size * 1.5f * targetWidth / sourceWidth
+                                    val distance = hypot(rawDx, rawDy)
+                                    val aimScale = if (distance > maxAimRadius && distance > 0f) maxAimRadius / distance else 1f
+                                    val dxInput = rawDx * aimScale
+                                    val dyInput = rawDy * aimScale
                                     injectTouch(MotionEvent.ACTION_UP,
                                         (aimStartX + dxInput).coerceIn(0f, (targetWidth - 1).toFloat()),
                                         (aimStartY + dyInput).coerceIn(0f, (targetHeight - 1).toFloat()))
