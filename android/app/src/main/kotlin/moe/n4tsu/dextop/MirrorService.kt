@@ -3788,18 +3788,30 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         }, LinearLayout.LayoutParams(0, dp(32), 1f))
         fun headerAction(label: String, width: Int, action: () -> Unit) {
             header.addView(TextView(this).apply {
-                text = label; gravity = Gravity.CENTER; setTextColor(Color.rgb(100,220,255))
-                textSize = 12f; typeface = Typeface.DEFAULT_BOLD
+                text = label
+                gravity = Gravity.CENTER
+                setTextColor(if (label == "+") Color.WHITE else Color.rgb(100,220,255))
+                textSize = if (label == "+") 22f else 16f
+                typeface = Typeface.DEFAULT_BOLD
+                background = if (label == "+") GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = dp(10).toFloat()
+                    setColor(Color.argb(220, 20, 105, 150))
+                    setStroke(dp(1), Color.rgb(100,220,255))
+                } else null
                 setOnClickListener { action() }
-            }, LinearLayout.LayoutParams(dp(width), dp(30)))
+            }, LinearLayout.LayoutParams(dp(width), dp(if (label == "+") 36 else 32)).apply {
+                leftMargin = dp(2); rightMargin = dp(2)
+            })
         }
-        headerAction("−", 32) {
-            val scale = (prefs.getFloat("button_scale", 1f) - .15f).coerceIn(.55f, 2.2f)
+        // Start a little larger and make the plus control increase size more noticeably.
+        headerAction("−", 36) {
+            val scale = (prefs.getFloat("button_scale", 1.25f) - .15f).coerceIn(.55f, 2.2f)
             prefs.edit().putFloat("button_scale", scale).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
-        headerAction("+", 38) {
-            val scale = (prefs.getFloat("button_scale", 1f) + .15f).coerceIn(.55f, 2.2f)
+        headerAction("+", 48) {
+            val scale = (prefs.getFloat("button_scale", 1.25f) + .25f).coerceIn(.55f, 2.2f)
             prefs.edit().putFloat("button_scale", scale).apply()
             content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
         }
@@ -3836,7 +3848,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             )
             specs.forEach { spec ->
                 val key = spec.label.replace(" ", "_")
-                val scale = prefs.getFloat("button_scale", 1f).coerceIn(.55f, 1.6f)
+                val scale = prefs.getFloat("button_scale", 1.25f).coerceIn(.55f, 2.2f)
                 val maxSize = (layer.width * .44f).roundToInt().coerceAtLeast(dp(30))
                 val size = (dp(spec.sizeDp) * scale).roundToInt().coerceIn(dp(28), maxSize)
                 val deckX = prefs.getFloat("${key}_deck_x", spec.x).coerceIn(0f, 1f)
