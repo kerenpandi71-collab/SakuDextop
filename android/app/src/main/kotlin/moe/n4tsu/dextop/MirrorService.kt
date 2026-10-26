@@ -3752,21 +3752,24 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                         onChange = { x, y ->
                             fun shapeAxis(value: Float): Float {
                                 // Small dead zone plus a gentle response curve keeps fine aiming controllable.
-                                val deadZone = .012f
+                                // Keep a tiny dead zone for drift, then use a mostly linear response.
+                                // Strong curves make cable/aim corrections feel delayed on small sticks.
+                                val deadZone = .008f
                                 val magnitude = kotlin.math.abs(value)
                                 if (magnitude <= deadZone) return 0f
                                 val normalized = ((magnitude - deadZone) / (1f - deadZone)).coerceIn(0f, 1f)
-                                val curved = normalized * .90f + normalized * normalized * .10f
+                                val curved = normalized * .96f + normalized * normalized * .04f
                                 return kotlin.math.sign(value) * curved
                             }
-                            // Avoid redundant Binder updates while preserving small deliberate movements.
+                            // Send finer axis steps so slow circular motions don't stutter.
+                            // A large threshold visibly quantizes the stick, especially during Fanny cable aiming.
                             val nextX = (shapeAxis(x).coerceIn(-1f, 1f) * 32767f).roundToInt()
                             val nextY = (shapeAxis(y).coerceIn(-1f, 1f) * 32767f).roundToInt()
-                            if (lastSentAxisX == Int.MIN_VALUE || kotlin.math.abs(nextX - lastSentAxisX) >= 48) {
+                            if (lastSentAxisX == Int.MIN_VALUE || kotlin.math.abs(nextX - lastSentAxisX) >= 8) {
                                 lastSentAxisX = nextX
                                 injectVirtualGamepadAxis(axisX, nextX)
                             }
-                            if (lastSentAxisY == Int.MIN_VALUE || kotlin.math.abs(nextY - lastSentAxisY) >= 48) {
+                            if (lastSentAxisY == Int.MIN_VALUE || kotlin.math.abs(nextY - lastSentAxisY) >= 8) {
                                 lastSentAxisY = nextY
                                 injectVirtualGamepadAxis(axisY, nextY)
                             }
