@@ -51,13 +51,12 @@ jobs:
         run: ./gradlew testGithubDebugUnitTest
 
       - name: Build Debug APK
-        run: flutter build apk --split-per-abi --flavor github --debug --dart-define=DISTRIBUTION_CHANNEL=github
+        run: flutter build apk --target-platform android-arm64 --flavor github --debug --dart-define=DISTRIBUTION_CHANNEL=github
 
       - name: Upload Nightly APKs
         uses: actions/upload-artifact@v4
         with:
-          name: dextop-nightly-split-${{ github.sha }}
-          path: |
-            build/app/outputs/flutter-apk/*.apk
+          name: dextop-nightly-arm64-universal-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-github-debug.apk
           if-no-files-found: error
           retention-days: 14
