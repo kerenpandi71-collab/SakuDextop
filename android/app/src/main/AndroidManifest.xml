@@ -104,6 +104,7 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Own the secondary-display HOME route; keep the phone HOME untouched. -->
         </activity>
         <!-- Desktop layer of the Dextop window manager. Started as a
              secondary HOME on the Dextop display so it always stays below
