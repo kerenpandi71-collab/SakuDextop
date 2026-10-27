@@ -2,7 +2,7 @@ name: Debug APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/landscape-gamepad-split-screen]
   pull_request:
   workflow_dispatch:
 
