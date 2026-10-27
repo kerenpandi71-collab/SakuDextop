@@ -531,20 +531,6 @@ extension _SettingsContent on _HomeScreenState {
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => _selectWindowManager(context, l, updateRoute),
               ),
-              if (windowManager != 'system') ...[
-                Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.palette_outlined),
-                  title: Text(l.plasmaSettingsTitle),
-                  subtitle: Text(l.plasmaSettingsSummary),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => PlasmaSettingsPage(bridge: bridge),
-                    ),
-                  ),
-                ),
-              ],
             ],
             Divider(height: 1),
             ListTile(
