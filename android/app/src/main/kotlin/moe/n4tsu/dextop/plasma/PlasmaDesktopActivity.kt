@@ -4,6 +4,13 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.LinearGradient
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.RadialGradient
+import android.graphics.Shader
 import android.os.Bundle
 import android.view.GestureDetector
 import android.view.KeyEvent
@@ -102,3 +109,47 @@ class PlasmaDesktopActivity : Activity() {
     }
 }
 
+/**
+ * An original abstract wallpaper in the spirit of Plasma 6's defaults:
+ * deep blue-violet gradient crossed by soft luminous ribbons.
+ */
+internal object PlasmaWallpaper {
+    fun render(width: Int, height: Int): Bitmap {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val w = width.toFloat()
+        val h = height.toFloat()
+        val base = Paint().apply {
+            shader = LinearGradient(0f, 0f, w, h, intArrayOf(0xFF0B1026.toInt(), 0xFF1B1F4B.toInt(), 0xFF2A1745.toInt()), floatArrayOf(0f, .55f, 1f), Shader.TileMode.CLAMP)
+        }
+        canvas.drawRect(0f, 0f, w, h, base)
+        val glow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = RadialGradient(w * .72f, h * .35f, maxOf(w, h) * .55f, 0x553DAEE9, 0x003DAEE9, Shader.TileMode.CLAMP)
+        }
+        canvas.drawRect(0f, 0f, w, h, glow)
+        val ribbons = listOf(
+            Triple(0x663DAEE9, .62f, .10f),
+            Triple(0x559B59B6, .70f, .16f),
+            Triple(0x4400D3B8, .78f, .07f),
+            Triple(0x33E93A9A, .54f, .05f),
+        )
+        ribbons.forEachIndexed { index, (color, anchor, thickness) ->
+            val path = Path()
+            val y0 = h * anchor
+            path.moveTo(-w * .05f, y0)
+            path.cubicTo(w * .25f, y0 - h * (.28f + index * .04f), w * .55f, y0 + h * .22f, w * 1.05f, y0 - h * (.18f - index * .05f))
+            path.lineTo(w * 1.05f, y0 - h * (.18f - index * .05f) + h * thickness)
+            path.cubicTo(w * .55f, y0 + h * (.22f + thickness), w * .25f, y0 - h * (.28f + index * .04f) + h * thickness, -w * .05f, y0 + h * thickness)
+            path.close()
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                shader = LinearGradient(0f, y0 - h * .3f, w, y0 + h * .2f, intArrayOf(color and 0x00FFFFFF, color, color and 0x00FFFFFF), null, Shader.TileMode.CLAMP)
+            }
+            canvas.drawPath(path, paint)
+        }
+        val vignette = Paint().apply {
+            shader = RadialGradient(w / 2f, h / 2f, maxOf(w, h) * .75f, 0x00000000, 0x66000000, Shader.TileMode.CLAMP)
+        }
+        canvas.drawRect(0f, 0f, w, h, vignette)
+        return bitmap
+    }
+}
