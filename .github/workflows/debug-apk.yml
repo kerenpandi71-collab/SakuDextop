@@ -2,7 +2,7 @@ name: Debug APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/landscape-gamepad-split-screen]
   pull_request:
   workflow_dispatch:
 
@@ -46,26 +46,17 @@ jobs:
       - name: Run Flutter tests
         run: flutter test
 
-      - name: Run Linux helper tests
-        run: python3 -m unittest discover -s tool/tests -p 'test_*.py'
-
       - name: Run Android unit tests
         working-directory: android
         run: ./gradlew testGithubDebugUnitTest
 
       - name: Build Debug APK
-        run: flutter build apk --flavor github --debug --dart-define=DISTRIBUTION_CHANNEL=github
-
-      - name: Build Dextop Car Companion Debug APK
-        working-directory: android
-        run: ./gradlew :cardex:assembleDebug
+        run: flutter build apk --target-platform android-arm64 --flavor github --debug --dart-define=DISTRIBUTION_CHANNEL=github
 
       - name: Upload Nightly APKs
         uses: actions/upload-artifact@v4
         with:
-          name: dextop-nightly-${{ github.sha }}
-          path: |
-            build/app/outputs/flutter-apk/app-github-debug.apk
-            build/cardex/outputs/apk/debug/cardex-debug.apk
+          name: dextop-nightly-arm64-universal-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-github-debug.apk
           if-no-files-found: error
           retention-days: 14

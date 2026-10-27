@@ -74,10 +74,14 @@ internal class XboxGamepadView(
         fun x(v: Float) = ox + v * unit
         fun y(v: Float) = oy + v * unit
         fun center(c: Control, px: Float, py: Float) { centers[c] = x(px) to y(py) }
-        center(Control.LEFT_STICK, 25f, 25f); center(Control.DPAD, 36f, 46f)
-        center(Control.RIGHT_STICK, 63f, 47f); center(Control.Y, 79f, 20f)
-        center(Control.X, 73f, 27f); center(Control.B, 85f, 27f); center(Control.A, 79f, 34f)
-        center(Control.HOME, 50f, 15f); center(Control.VIEW, 44f, 28f); center(Control.MENU, 56f, 28f)
+        // Split the controller into two clear zones: game buttons on the
+        // left and both analog sticks on the right. This keeps the controls
+        // usable when the controller deck sits beside the mirrored game.
+        center(Control.DPAD, 24f, 43f)
+        center(Control.Y, 19f, 20f); center(Control.X, 11f, 28f)
+        center(Control.B, 27f, 28f); center(Control.A, 19f, 36f)
+        center(Control.LEFT_STICK, 69f, 25f); center(Control.RIGHT_STICK, 69f, 48f)
+        center(Control.HOME, 50f, 15f); center(Control.VIEW, 43f, 20f); center(Control.MENU, 57f, 20f)
 
         val body = Path().apply {
             moveTo(x(18f), y(10f)); cubicTo(x(25f), y(5f), x(35f), y(10f), x(40f), y(12f))
@@ -428,6 +432,8 @@ internal class GamepadStickView(
     private val knobPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var xValue = 0f
     private var yValue = 0f
+    private var filteredX = 0f
+    private var filteredY = 0f
     private var activePointerId = MotionEvent.INVALID_POINTER_ID
     private var downX = 0f
     private var downY = 0f
@@ -501,6 +507,8 @@ internal class GamepadStickView(
                 activePointerId = MotionEvent.INVALID_POINTER_ID
                 xValue = 0f
                 yValue = 0f
+                filteredX = 0f
+                filteredY = 0f
                 onRelease()
                 invalidate()
                 if (event.actionMasked == MotionEvent.ACTION_UP && !movedBeyondTapSlop) performClick()
@@ -521,11 +529,28 @@ internal class GamepadStickView(
         val travel = (width.coerceAtMost(height) / 2f * .62f).coerceAtLeast(1f)
         var nextX = ((x - centerX) / travel).coerceIn(-1f, 1f)
         var nextY = ((y - centerY) / travel).coerceIn(-1f, 1f)
+
+        // Radial dead-zone compensation: remove center drift but preserve the
+        // full range immediately outside the dead zone. Avoid temporal
+        // smoothing here because it adds visible lag during fast circular aim
+        // (especially Fanny cable turns).
         val length = hypot(nextX.toDouble(), nextY.toDouble()).toFloat()
-        if (length < .08f) {
+        val deadZone = .055f
+        if (length <= deadZone) {
             nextX = 0f
             nextY = 0f
+        } else {
+            val magnitude = ((length - deadZone) / (1f - deadZone)).coerceIn(0f, 1f)
+            val scale = magnitude / length.coerceAtLeast(.0001f)
+            nextX = (nextX * scale).coerceIn(-1f, 1f)
+            nextY = (nextY * scale).coerceIn(-1f, 1f)
         }
+
+        // Send each fresh touch sample directly. The previous exponential
+        // filter smoothed the drawing and input together, but made the virtual
+        // stick trail the finger and feel like it was rotating in steps.
+        filteredX = nextX
+        filteredY = nextY
         xValue = nextX
         yValue = nextY
         onChange(nextX, nextY)

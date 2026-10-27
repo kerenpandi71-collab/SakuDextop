@@ -11,7 +11,8 @@ class DextopLauncherActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val launchDisplayId = display?.displayId ?: Display.DEFAULT_DISPLAY
-        val desktopLaunch = MirrorService.isActive() && launchDisplayId != Display.DEFAULT_DISPLAY
+        // Any non-primary display must use SakuDextop's desktop UI, even before MirrorService reports active.
+        val desktopLaunch = launchDisplayId != Display.DEFAULT_DISPLAY
         val destination = if (desktopLaunch) DesktopActivity::class.java else MainActivity::class.java
         val flags = if (desktopLaunch) {
             Intent.FLAG_ACTIVITY_NEW_TASK or

@@ -1040,8 +1040,12 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
     private var demoMode = false
     private var demoInfoView: TextView? = null
     private var performanceHud: PerformanceHud? = null
+    private var assistantBubble: TextView? = null
+    private var assistantBubbleParams: WindowManager.LayoutParams? = null
+    private var visualMappingOverlay: View? = null
     private var laptopContent: LinearLayout? = null
     private var laptopDeck: View? = null
+    private var laptopLandscapeAnalogDeck: View? = null
     private var laptopDeckContent: LinearLayout? = null
     private var laptopPreviewThemeId: String? = null
     private var laptopSettingsVisible = false
@@ -1063,6 +1067,11 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
     }
     private val laptopInputExecutor = Executors.newSingleThreadExecutor { task ->
         Thread(task, "Dextop-laptop-input").apply { isDaemon = true }
+    }
+    // Keep gamepad axis IPC off the UI thread. A dedicated serial worker lets us
+    // drop stale stick samples while preserving the newest direction immediately.
+    private val gamepadAxisExecutor = Executors.newSingleThreadExecutor { task ->
+        Thread(task, "Dextop-gamepad-axis").apply { isDaemon = true }
     }
     private val laptopSwipeHandler = Handler(Looper.getMainLooper())
     private var laptopSwipeGeneration = 0L
@@ -1407,8 +1416,9 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             }
 
             override fun onThreeFingerGesture() {
-                OperationLog.i(this@MirrorService, "PrivilegedInput", "three-finger action")
-                performConfiguredGesture()
+                // The floating assistant bubble is now the single entry point
+                // for the Dextop menu. Ignore the legacy three-finger shortcut.
+                OperationLog.i(this@MirrorService, "PrivilegedInput", "legacy three-finger menu gesture ignored; use assistant bubble")
             }
 
             override fun onHaptic(strong: Boolean) {
@@ -2650,7 +2660,18 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             densityDpi = newConfig.densityDpi
         )
         root?.postDelayed({
-            if (active) refreshPrivilegedInputConfig("configuration_changed")
+            if (active) {
+                if (laptopModeActive) {
+                    if (keyboardDeckStyle == KeyboardDeckStyle.GAMEPAD) {
+                        // Recreate the gamepad deck so rotation swaps the single
+                        // controller for the split analog-left/action-right layout.
+                        rebuildLaptopDeck()
+                    }
+                    updateLaptopHostLayout()
+                    applyLaptopGeometryWhenLaidOut(true, preserveMenu = true)
+                }
+                refreshPrivilegedInputConfig("configuration_changed")
+            }
         }, 120L)
     }
 
@@ -3190,18 +3211,120 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         frame.addView(content, FrameLayout.LayoutParams(-1, -1, Gravity.TOP))
         frame.addView(scrim, FrameLayout.LayoutParams(-1, -1))
         frame.addView(controls, menuLayoutParams())
+        val hudPrefs = getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE)
         val hud = PerformanceHud(this) { inputMode() }.apply {
-            visibility = if (getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE)
-                    .getBoolean("flutter.performance_hud", false)
-            ) View.VISIBLE else View.GONE
-        }
-        frame.addView(
-            hud,
-            FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply {
-                topMargin = dp(18)
-                rightMargin = dp(18)
+            visibility = if (hudPrefs.getBoolean("flutter.performance_hud", false)) {
+                View.VISIBLE
+            } else {
+                View.GONE
             }
-        )
+        }
+        val hudLayout = FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.START).apply {
+            leftMargin = hudPrefs.getInt("flutter.performance_hud_x", dp(18)).coerceAtLeast(0)
+            topMargin = hudPrefs.getInt("flutter.performance_hud_y", dp(18)).coerceAtLeast(0)
+        }
+        hud.setOnTouchListener { view, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    view.tag = floatArrayOf(event.rawX, event.rawY,
+                        hudLayout.leftMargin.toFloat(), hudLayout.topMargin.toFloat())
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val start = view.tag as? FloatArray ?: return@setOnTouchListener true
+                    val maxX = (frame.width - view.width).coerceAtLeast(0)
+                    val maxY = (frame.height - view.height).coerceAtLeast(0)
+                    hudLayout.leftMargin = (start[2] + event.rawX - start[0]).toInt().coerceIn(0, maxX)
+                    hudLayout.topMargin = (start[3] + event.rawY - start[1]).toInt().coerceIn(0, maxY)
+                    frame.updateViewLayout(view, hudLayout)
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    hudPrefs.edit()
+                        .putInt("flutter.performance_hud_x", hudLayout.leftMargin)
+                        .putInt("flutter.performance_hud_y", hudLayout.topMargin)
+                        .apply()
+                    true
+                }
+                MotionEvent.ACTION_CANCEL -> true
+                else -> true
+            }
+        }
+        frame.addView(hud, hudLayout)
+        val assistant = TextView(this).apply {
+            text = "✦"
+            gravity = Gravity.CENTER
+            textSize = 24f
+            setTextColor(Color.WHITE)
+            elevation = dp(12).toFloat()
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.rgb(35, 112, 235))
+                setStroke(dp(2), Color.argb(220, 255, 255, 255))
+            }
+            contentDescription = "Buka menu Dextop"
+            isClickable = true
+            isFocusable = true
+            setOnTouchListener { view, event ->
+                val params = assistantBubbleParams
+                    ?: return@setOnTouchListener false
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        view.tag = mutableMapOf<String, Any>(
+                            "downX" to event.rawX,
+                            "downY" to event.rawY,
+                            "startX" to params.x,
+                            "startY" to params.y,
+                            "dragged" to false,
+                        )
+                        true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val state = view.tag as? MutableMap<String, Any> ?: return@setOnTouchListener true
+                        val dx = event.rawX - (state["downX"] as Float)
+                        val dy = event.rawY - (state["downY"] as Float)
+                        if (kotlin.math.abs(dx) > dp(5) || kotlin.math.abs(dy) > dp(5)) {
+                            state["dragged"] = true
+                        }
+                        if (state["dragged"] == true) {
+                            val maxX = (resources.displayMetrics.widthPixels - view.width).coerceAtLeast(0)
+                            val maxY = (resources.displayMetrics.heightPixels - view.height).coerceAtLeast(0)
+                            params.x = ((state["startX"] as Int) + dx.toInt()).coerceIn(0, maxX)
+                            params.y = ((state["startY"] as Int) + dy.toInt()).coerceIn(0, maxY)
+                            runCatching { windowManager?.updateViewLayout(view, params) }
+                        }
+                        true
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        val state = view.tag as? MutableMap<*, *>
+                        if (state?.get("dragged") != true) toggleMenu()
+                        true
+                    }
+                    MotionEvent.ACTION_CANCEL -> true
+                    else -> true
+                }
+            }
+        }
+        val assistantSize = dp(52)
+        val bubbleParams = WindowManager.LayoutParams(
+            assistantSize,
+            assistantSize,
+            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = (resources.displayMetrics.widthPixels - assistantSize - dp(8)).coerceAtLeast(0)
+            y = ((resources.displayMetrics.heightPixels - assistantSize) / 2).coerceAtLeast(0)
+            layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+            fitInsetsTypes = 0
+            setFitInsetsIgnoringVisibility(true)
+            title = "Dextop assistant bubble"
+        }
+        assistantBubbleParams = bubbleParams
+        assistantBubble = assistant
         surface.post { surface.requestFocus() }
         controls.bringToFront()
         val params = WindowManager.LayoutParams(
@@ -3235,6 +3358,13 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         menuScrim = scrim
         performanceHud = hud
         windowManager?.addView(frame, params)
+        // Add the touchable bubble after the full-screen host so the host cannot cover it.
+        runCatching { windowManager?.addView(assistant, bubbleParams) }
+            .onFailure {
+                assistantBubble = null
+                assistantBubbleParams = null
+                Log.e(logTag, "unable to attach touchable assistant bubble", it)
+            }
         frame.post {
             refreshFoldingApiState("window_added", force = true)
             OperationLog.i(
@@ -3609,6 +3739,10 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
     }
 
     private fun buildVirtualGamepadDeck(content: LinearLayout, palette: LaptopPalette) {
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            buildLandscapeActionDeck(content, palette)
+            return
+        }
         val title = TextView(this).apply {
             text = NativeStrings.text("nativeVirtualGamepad")
             gravity = Gravity.CENTER_VERTICAL
@@ -3619,18 +3753,497 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             setPadding(dp(4), 0, dp(4), dp(4))
         }
         content.addView(title, LinearLayout.LayoutParams(-1, dp(28)))
-
         content.addView(
             XboxGamepadView(
                 this,
                 onButtonChanged = ::injectVirtualGamepadButton,
                 onAxisChanged = ::injectVirtualGamepadAxis,
                 onHaptic = { performLaptopHaptic(null) },
-            ).apply {
-                contentDescription = NativeStrings.text("nativeVirtualGamepad")
-            },
+            ).apply { contentDescription = NativeStrings.text("nativeVirtualGamepad") },
             LinearLayout.LayoutParams(-1, 0, 1f),
         )
+    }
+
+    /** Landscape uses a true three-zone layout: analogs left, game in the middle, actions right. */
+    private fun buildLandscapeAnalogDeck(palette: LaptopPalette): View = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        gravity = Gravity.CENTER
+        setPadding(dp(3), dp(8), dp(3), dp(8))
+        setBackgroundColor(Color.TRANSPARENT)
+        isClickable = true
+        setOnTouchListener { _, _ -> true }
+        var lastSentAxisX = Int.MIN_VALUE
+        var lastSentAxisY = Int.MIN_VALUE
+        var pendingAxisX = 0
+        var pendingAxisY = 0
+        var pendingCodeX = PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_X
+        var pendingCodeY = PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_Y
+        var pendingAxisGeneration = 0L
+        var axisDispatchPosted = false
+        val axisLock = Any()
+        fun queueAxes(codeX: Int, codeY: Int, x: Int, y: Int) {
+            val shouldPost = synchronized(axisLock) {
+                pendingCodeX = codeX
+                pendingCodeY = codeY
+                pendingAxisX = x
+                pendingAxisY = y
+                pendingAxisGeneration++
+                if (axisDispatchPosted) false else {
+                    axisDispatchPosted = true
+                    true
+                }
+            }
+            if (!shouldPost) return
+
+            // Keep exactly one drain task in flight. Clearing axisDispatchPosted before
+            // Binder IPC let every incoming MotionEvent enqueue another task whenever IPC
+            // was slow, building a stale queue and delaying fast Fanny cable reversals.
+            gamepadAxisExecutor.execute {
+                while (true) {
+                    val sample = synchronized(axisLock) {
+                        longArrayOf(
+                            pendingCodeX.toLong(),
+                            pendingAxisX.toLong(),
+                            pendingCodeY.toLong(),
+                            pendingAxisY.toLong(),
+                            pendingAxisGeneration
+                        )
+                    }
+                    val xCode = sample[0].toInt()
+                    val xValue = sample[1].toInt()
+                    val yCode = sample[2].toInt()
+                    val yValue = sample[3].toInt()
+                    // Binder IPC remains off the UI thread. During IPC, new moves replace
+                    // the pending sample instead of accumulating behind the current one.
+                    if (xValue != lastSentAxisX) {
+                        injectVirtualGamepadAxis(xCode, xValue)
+                        lastSentAxisX = xValue
+                    }
+                    if (yValue != lastSentAxisY) {
+                        injectVirtualGamepadAxis(yCode, yValue)
+                        lastSentAxisY = yValue
+                    }
+                    val finished = synchronized(axisLock) {
+                        if (pendingAxisGeneration == sample[4]) {
+                            axisDispatchPosted = false
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    if (finished) break
+                }
+            }
+        }
+        fun stick(label: String, axisX: Int, axisY: Int): View {
+            val group = LinearLayout(this@MirrorService).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                addView(gamepadCaption(label, palette), LinearLayout.LayoutParams(-1, dp(18)))
+                addView(
+                    GamepadStickView(
+                        this@MirrorService,
+                        onChange = { x, y ->
+                            fun shapeAxis(value: Float): Float {
+                                // Small dead zone plus a gentle response curve keeps fine aiming controllable.
+                                // Keep a tiny dead zone for drift, then use a mostly linear response.
+                                // Strong curves make cable/aim corrections feel delayed on small sticks.
+                                val deadZone = .008f
+                                val magnitude = kotlin.math.abs(value)
+                                if (magnitude <= deadZone) return 0f
+                                val normalized = ((magnitude - deadZone) / (1f - deadZone)).coerceIn(0f, 1f)
+                                val curved = normalized * .96f + normalized * normalized * .04f
+                                return kotlin.math.sign(value) * curved
+                            }
+                            // Send finer axis steps so slow circular motions don't stutter.
+                            // A large threshold visibly quantizes the stick, especially during Fanny cable aiming.
+                            val nextX = (shapeAxis(x).coerceIn(-1f, 1f) * 32767f).roundToInt()
+                            val nextY = (shapeAxis(y).coerceIn(-1f, 1f) * 32767f).roundToInt()
+                            // Keep the newest position and dispatch at up to 120 Hz.
+                            // Coalescing stale samples avoids a growing IPC backlog during
+                            // fast circular movement while keeping the newest input responsive.
+                            queueAxes(axisX, axisY, nextX, nextY)
+                        },
+                        onRelease = {
+                            // Use the same latest-value drain for release so a stale
+                            // movement sample cannot be sent after the stick returns to zero.
+                            queueAxes(axisX, axisY, 0, 0)
+                        },
+                        baseColor = Color.argb(70, 80, 80, 88),
+                        ringColor = palette.border,
+                        knobColor = palette.selected,
+                    ),
+                    LinearLayout.LayoutParams(-1, 0, 1f),
+                )
+            }
+            return group
+        }
+        // MOBA layout: the move handle sits above the stick and can reposition
+        // the stick vertically within the left deck. Save the position per user.
+        val stickPrefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
+        val gamepad2Button = TextView(this@MirrorService).apply {
+            text = if (stickPrefs.getBoolean("gamepad_2_battle_royale", false)) "🎮  GAMEPAD 2 · BR" else "🎮  GAMEPAD 2"
+            gravity = Gravity.CENTER
+            textSize = 11f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+            background = GradientDrawable().apply {
+                cornerRadius = dp(12).toFloat()
+                setColor(Color.argb(220, 20, 105, 150))
+                setStroke(dp(1), Color.rgb(100, 220, 255))
+            }
+            setOnClickListener {
+                val enabled = !stickPrefs.getBoolean("gamepad_2_battle_royale", false)
+                stickPrefs.edit().putBoolean("gamepad_2_battle_royale", enabled).apply()
+                text = if (enabled) "🎮  GAMEPAD 2 · BR" else "🎮  GAMEPAD 2"
+                laptopDeckContent?.let { actionContent ->
+                    actionContent.removeAllViews()
+                    buildLandscapeActionDeck(actionContent, laptopPalette())
+                }
+                performLaptopHaptic(this)
+            }
+        }
+        addView(gamepad2Button, LinearLayout.LayoutParams(-1, dp(38)).apply {
+            bottomMargin = dp(4)
+        })
+        val moveLayer = FrameLayout(this@MirrorService).apply {
+            clipChildren = false
+            clipToPadding = false
+        }
+        addView(moveLayer, LinearLayout.LayoutParams(-1, 0, 1f))
+        val moveStick = stick("GERAK", PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_X, PrivilegedInputProtocol.GAMEPAD_AXIS_LEFT_Y)
+        val moveStickHolder = FrameLayout(this@MirrorService).apply {
+            clipChildren = false
+            clipToPadding = false
+            addView(moveStick, FrameLayout.LayoutParams(-1, -1))
+        }
+        moveLayer.addView(moveStickHolder, FrameLayout.LayoutParams(-1, (moveLayer.height * .62f).roundToInt().coerceAtLeast(1), Gravity.TOP))
+        val positionHandle = TextView(this@MirrorService).apply {
+            text = "↕  GESER ANALOG"
+            gravity = Gravity.CENTER
+            textSize = 10f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+            background = GradientDrawable().apply {
+                cornerRadius = dp(12).toFloat()
+                setColor(Color.argb(205, 22, 75, 105))
+                setStroke(dp(1), Color.rgb(90, 200, 255))
+            }
+            contentDescription = "Geser untuk mengatur posisi analog"
+        }
+        moveLayer.addView(positionHandle, FrameLayout.LayoutParams(-1, dp(34), Gravity.TOP))
+        var handleDownY = 0f
+        var stickOffset = stickPrefs.getFloat("left_stick_vertical", .12f).coerceIn(0f, 1f)
+        fun placeStick() {
+            val available = (moveLayer.height - moveStickHolder.height).coerceAtLeast(0)
+            val lp = moveStickHolder.layoutParams as? FrameLayout.LayoutParams ?: return
+            lp.gravity = Gravity.TOP
+            lp.topMargin = (available * stickOffset).roundToInt()
+            moveStickHolder.layoutParams = lp
+            positionHandle.translationY = (lp.topMargin + dp(4)).coerceAtMost((moveLayer.height - dp(38)).coerceAtLeast(0)).toFloat()
+        }
+        positionHandle.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> { handleDownY = event.rawY; true }
+                MotionEvent.ACTION_MOVE -> {
+                    val available = (moveLayer.height - moveStickHolder.height).coerceAtLeast(1)
+                    stickOffset = (stickOffset + (event.rawY - handleDownY) / available).coerceIn(0f, 1f)
+                    handleDownY = event.rawY
+                    stickPrefs.edit().putFloat("left_stick_vertical", stickOffset).apply()
+                    placeStick()
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> true
+                else -> true
+            }
+        }
+        moveLayer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            val lp = moveStickHolder.layoutParams as? FrameLayout.LayoutParams
+            if (lp != null) {
+                // Never let the stick holder become taller than the available deck.
+                // The old 180dp minimum could exceed short landscape panes, making
+                // available=0 and preventing the analog from reaching the bottom.
+                lp.height = (moveLayer.height * .62f).roundToInt().coerceIn(1, moveLayer.height.coerceAtLeast(1))
+                moveStickHolder.layoutParams = lp
+                placeStick()
+            }
+        }
+        moveLayer.post { placeStick() }
+    }
+
+    private fun buildLandscapeActionDeck(content: LinearLayout, palette: LaptopPalette) {
+        val prefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
+        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val battleRoyaleMode = prefs.getBoolean("gamepad_2_battle_royale", false)
+        header.addView(TextView(this).apply {
+            text = if (battleRoyaleMode) "BATTLE ROYALE" else "KONTROL ARENA SAKU"
+            gravity = Gravity.CENTER_VERTICAL
+            setTextColor(palette.text)
+            textSize = 10f
+            typeface = Typeface.DEFAULT_BOLD
+        }, LinearLayout.LayoutParams(0, dp(32), 1f))
+        fun headerAction(label: String, width: Int, action: () -> Unit) {
+            header.addView(TextView(this).apply {
+                text = label
+                gravity = Gravity.CENTER
+                setTextColor(if (label == "+") Color.WHITE else Color.rgb(100,220,255))
+                textSize = if (label == "+") 22f else 16f
+                typeface = Typeface.DEFAULT_BOLD
+                background = if (label == "+") GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = dp(10).toFloat()
+                    setColor(Color.argb(220, 20, 105, 150))
+                    setStroke(dp(1), Color.rgb(100,220,255))
+                } else null
+                setOnClickListener { action() }
+            }, LinearLayout.LayoutParams(dp(width), dp(if (label == "+") 36 else 32)).apply {
+                leftMargin = dp(2); rightMargin = dp(2)
+            })
+        }
+        val buttonKeys = if (battleRoyaleMode) {
+            listOf("BR_FIRE", "BR_AIM", "BR_JUMP", "BR_CROUCH", "BR_PRONE", "BR_RELOAD", "BR_WEAPON", "BR_SCOPE")
+        } else {
+            listOf("FIRE_ALL", "REGEN", "FLICKER", "BUFF", "S1", "S2", "S3", "CC", "CONCEAL", "ATTACK")
+        }
+        fun displayButtonName(key: String): String = when (key) {
+            "BR_FIRE" -> "TEMBAK"; "BR_AIM" -> "BIDIK"; "BR_JUMP" -> "LOMPAT"; "BR_CROUCH" -> "JONGKOK"
+            "BR_PRONE" -> "TIARAP"; "BR_RELOAD" -> "RELOAD"; "BR_WEAPON" -> "SENJATA"; "BR_SCOPE" -> "SCOPE"
+            "FIRE_ALL" -> "SERANG BEBAS"; "REGEN" -> "REGENERASI"; "FLICKER" -> "KILAT"; "BUFF" -> "PENGUAT"
+            "S1" -> "SKILL 1"; "S2" -> "SKILL 2"; "S3" -> "ULTI"; "CC" -> "KENDALI"; "CONCEAL" -> "PENYAMARAN"; "ATTACK" -> "SERANG"; else -> key
+        }
+        val selectedKey = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
+        headerAction("‹", 32) {
+            val index = buttonKeys.indexOf(prefs.getString("selected_gamepad_button", "S1")).coerceAtLeast(0)
+            prefs.edit().putString("selected_gamepad_button", buttonKeys[(index - 1 + buttonKeys.size) % buttonKeys.size]).apply()
+            content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
+        }
+        headerAction(displayButtonName(selectedKey), 66) {
+            val index = buttonKeys.indexOf(prefs.getString("selected_gamepad_button", "S1")).coerceAtLeast(0)
+            prefs.edit().putString("selected_gamepad_button", buttonKeys[(index + 1) % buttonKeys.size]).apply()
+            content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
+        }
+        headerAction("−", 36) {
+            val key = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
+            val current = prefs.getFloat("${key}_size", 3.0f)
+            prefs.edit().putFloat("${key}_size", (current - .25f).coerceIn(.75f, 18f)).apply()
+            content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
+        }
+        headerAction("+", 48) {
+            val key = prefs.getString("selected_gamepad_button", "S1") ?: "S1"
+            val current = prefs.getFloat("${key}_size", 3.0f)
+            prefs.edit().putFloat("${key}_size", (current + .5f).coerceIn(.75f, 18f)).apply()
+            content.removeAllViews(); buildLandscapeActionDeck(content, laptopPalette())
+        }
+        headerAction(if (prefs.getBoolean("edit_gamepad_positions", false)) "SIMPAN" else "ATUR POSISI", 68) {
+            prefs.edit().putBoolean("edit_gamepad_positions", !prefs.getBoolean("edit_gamepad_positions", false)).apply()
+            content.removeAllViews()
+            buildLandscapeActionDeck(content, laptopPalette())
+        }
+        content.addView(header, LinearLayout.LayoutParams(-1, dp(34)))
+        val layer = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
+        content.addView(layer, LinearLayout.LayoutParams(-1, 0, 1f))
+        layer.post {
+            if (layer.width <= 0 || layer.height <= 0) return@post
+            val editPositions = prefs.getBoolean("edit_gamepad_positions", false)
+            data class SkillSpec(
+                val label: String, val icon: String, val color: Int, val sizeDp: Int,
+                val x: Float, val y: Float, val targetX: Float, val targetY: Float
+            )
+            // Deck coordinates are intentionally separate from touch-map coordinates.
+            // This prevents screen-wide mapping positions from collapsing all controls
+            // into the narrow right-hand gamepad panel.
+            val specs = if (battleRoyaleMode) listOf(
+                SkillSpec("BR_FIRE", "●", Color.rgb(255, 82, 82), 48, .78f, .78f, .92f, .80f),
+                SkillSpec("BR_AIM", "◎", Color.rgb(100, 220, 255), 42, .78f, .56f, .82f, .55f),
+                SkillSpec("BR_JUMP", "↟", Color.rgb(255, 205, 70), 42, .25f, .14f, .84f, .24f),
+                SkillSpec("BR_CROUCH", "▾", Color.rgb(110, 225, 150), 38, .22f, .39f, .85f, .48f),
+                SkillSpec("BR_PRONE", "━", Color.rgb(175, 175, 255), 38, .22f, .60f, .85f, .64f),
+                SkillSpec("BR_RELOAD", "↻", Color.rgb(255, 170, 90), 40, .50f, .14f, .72f, .77f),
+                SkillSpec("BR_WEAPON", "⚔", Color.rgb(255, 150, 100), 42, .50f, .39f, .91f, .66f),
+                SkillSpec("BR_SCOPE", "⌖", Color.rgb(150, 220, 255), 40, .50f, .60f, .82f, .55f)
+            ) else listOf(
+                // Preserve the existing MOBA controls and their touch targets.
+                SkillSpec("FIRE ALL", "❄", Color.rgb(90,180,229), 38, .18f, .12f, .13f, .84f),
+                SkillSpec("REGEN", "✚", Color.rgb(108,224,108), 38, .66f, .12f, .29f, .84f),
+                SkillSpec("FLICKER", "⚡", Color.rgb(255,204,0), 40, .20f, .35f, .45f, .84f),
+                SkillSpec("BUFF", "◆", Color.rgb(102,179,255), 42, .68f, .35f, .62f, .82f),
+                SkillSpec("S1", "▲", Color.rgb(255,157,0), 42, .17f, .58f, .55f, .72f),
+                SkillSpec("S2", "◆", Color.rgb(0,229,255), 42, .65f, .58f, .72f, .62f),
+                SkillSpec("S3", "✦", Color.rgb(196,110,255), 50, .28f, .82f, .84f, .80f),
+                SkillSpec("CC", "✦", Color.rgb(163,102,255), 36, .76f, .59f, .72f, .42f),
+                SkillSpec("CONCEAL", "◉", Color.rgb(77,255,234), 36, .78f, .13f, .91f, .43f),
+                SkillSpec("ATTACK", "⚔", Color.rgb(153,204,255), 54, .72f, .84f, .94f, .88f)
+            )
+            specs.forEach { spec ->
+                val key = spec.label.replace(" ", "_")
+                val scale = prefs.getFloat("${key}_size", 3.0f).coerceIn(.75f, 18f)
+                // Each button has its own scale preference. Let the user enlarge individual
+                // controls substantially while keeping the circle inside the right-hand deck.
+                val maxSize = (min(layer.width * .92f, layer.height * .72f)).roundToInt().coerceAtLeast(dp(48))
+                val size = (dp(spec.sizeDp) * scale).roundToInt().coerceIn(dp(36), maxSize)
+                val deckX = prefs.getFloat("${key}_deck_x", spec.x).coerceIn(0f, 1f)
+                val deckY = prefs.getFloat("${key}_deck_y", spec.y).coerceIn(0f, 1f)
+                val targetX = prefs.getFloat("${key}_x", spec.targetX).coerceIn(0f, 1f)
+                val targetY = prefs.getFloat("${key}_y", spec.targetY).coerceIn(0f, 1f)
+                val angle = prefs.getFloat("${key}_rotation", if (key == "ATTACK") 45f else 0f)
+                val holder = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
+                val aimRing = View(this).apply {
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(Color.TRANSPARENT)
+                        setStroke(dp(2), Color.argb(230, Color.red(spec.color), Color.green(spec.color), Color.blue(spec.color)))
+                    }
+                    visibility = View.GONE
+                    isClickable = false
+                    isFocusable = false
+                }
+                holder.addView(aimRing, FrameLayout.LayoutParams((size * 3.0f).roundToInt(), (size * 3.0f).roundToInt(), Gravity.CENTER))
+                val aimDot = View(this).apply {
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(Color.argb(220, Color.red(spec.color), Color.green(spec.color), Color.blue(spec.color)))
+                    }
+                    visibility = View.GONE
+                    isClickable = false
+                }
+                holder.addView(aimDot, FrameLayout.LayoutParams(dp(10), dp(10), Gravity.CENTER))
+                val circle = TextView(this).apply {
+                    gravity = Gravity.CENTER
+                    text = spec.icon
+                    textSize = if (key == "ATTACK") 31f else if (key == "S3") 27f else 20f
+                    typeface = Typeface.DEFAULT_BOLD
+                    setTextColor(spec.color)
+                    setShadowLayer(dp(8).toFloat(), 0f, 0f, spec.color)
+                    background = GradientDrawable(
+                        GradientDrawable.Orientation.TL_BR,
+                        intArrayOf(
+                            Color.argb(230, (Color.red(spec.color) * .42f).toInt(), (Color.green(spec.color) * .42f).toInt(), (Color.blue(spec.color) * .42f).toInt()),
+                            Color.argb(238, 10, 20, 36)
+                        )
+                    ).apply {
+                        shape = GradientDrawable.OVAL
+                        setStroke(dp(if (key == "S3" || key == "ATTACK") 3 else 2),
+                            Color.argb(220, Color.red(spec.color), Color.green(spec.color), Color.blue(spec.color)))
+                    }
+                    elevation = dp(5).toFloat()
+                    rotation = angle
+                    var downRawX = 0f
+                    var downRawY = 0f
+                    var aimStartX = 0f
+                    var aimStartY = 0f
+                    var moved = false
+                    setOnTouchListener { view, event ->
+                        val lp = holder.layoutParams as? FrameLayout.LayoutParams
+                        when (event.actionMasked) {
+                            MotionEvent.ACTION_DOWN -> {
+                                downRawX = event.rawX
+                                downRawY = event.rawY
+                                moved = false
+                                view.scaleX = .96f; view.scaleY = .96f
+                                aimStartX = targetX * (targetWidth - 1)
+                                aimStartY = targetY * (targetHeight - 1)
+                                if (!editPositions) {
+                                    injectTouch(MotionEvent.ACTION_DOWN, aimStartX, aimStartY)
+                                    if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER") {
+                                        aimRing.visibility = View.VISIBLE
+                                        aimDot.visibility = View.VISIBLE
+                                        aimDot.translationX = 0f; aimDot.translationY = 0f
+                                    }
+                                }
+                                true
+                            }
+                            MotionEvent.ACTION_MOVE -> {
+                                val dx = event.rawX - downRawX
+                                val dy = event.rawY - downRawY
+                                if (kotlin.math.abs(dx) > dp(3) || kotlin.math.abs(dy) > dp(3)) moved = true
+                                if (editPositions && lp != null) {
+                                    lp.leftMargin = (lp.leftMargin + dx.roundToInt()).coerceIn(0, (layer.width - holder.width).coerceAtLeast(0))
+                                    lp.topMargin = (lp.topMargin + dy.roundToInt()).coerceIn(0, (layer.height - holder.height).coerceAtLeast(0))
+                                    holder.layoutParams = lp
+                                    // Update the drag anchor only while repositioning the overlay.
+                                    downRawX = event.rawX
+                                    downRawY = event.rawY
+                                    prefs.edit()
+                                        .putFloat("${key}_deck_x", ((lp.leftMargin + holder.width / 2f) / layer.width.coerceAtLeast(1)).coerceIn(0f, 1f))
+                                        .putFloat("${key}_deck_y", ((lp.topMargin + holder.height / 2f) / layer.height.coerceAtLeast(1)).coerceIn(0f, 1f))
+                                        .apply()
+                                } else if (key == "S1" || key == "S2" || key == "S3" || key == "FLICKER") {
+                                    // Hold and drag to aim a skill or Flicker, then release to cast.
+                                    // Translate drag direction into the virtual-display coordinate space.
+                                    val inputSurface = surfaceView
+                                    val sourceWidth = (inputSurface?.width ?: layer.width).coerceAtLeast(1)
+                                    val sourceHeight = (inputSurface?.height ?: layer.height).coerceAtLeast(1)
+                                    val scaleX = targetWidth.toFloat() / sourceWidth
+                                    val scaleY = targetHeight.toFloat() / sourceHeight
+                                    val rawDx = (event.rawX - downRawX) * scaleX
+                                    val rawDy = (event.rawY - downRawY) * scaleY
+                                    // Keep the aiming point inside a true circular boundary even
+                                    // when the virtual display and visible host pane have different
+                                    // aspect ratios. Use the smaller axis scale for the radius.
+                                    val maxAimRadius = size * 1.5f * min(scaleX, scaleY)
+                                    val distance = hypot(rawDx, rawDy)
+                                    val aimScale = if (distance > maxAimRadius && distance > 0f) maxAimRadius / distance else 1f
+                                    val dxInput = rawDx * aimScale
+                                    val dyInput = rawDy * aimScale
+                                    injectTouch(MotionEvent.ACTION_MOVE,
+                                        (aimStartX + dxInput).coerceIn(0f, (targetWidth - 1).toFloat()),
+                                        (aimStartY + dyInput).coerceIn(0f, (targetHeight - 1).toFloat()))
+                                    // Render the visible dot in host-view pixels, not virtual pixels.
+                                    aimDot.translationX = (dx * aimScale).coerceIn((-size * 1.5f), size * 1.5f)
+                                    aimDot.translationY = (dy * aimScale).coerceIn((-size * 1.5f), size * 1.5f)
+                                }
+                                true
+                            }
+                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                if (editPositions && lp != null) {
+                                    prefs.edit()
+                                        .putFloat("${key}_deck_x", ((lp.leftMargin + holder.width / 2f) / layer.width.coerceAtLeast(1)).coerceIn(0f, 1f))
+                                        .putFloat("${key}_deck_y", ((lp.topMargin + holder.height / 2f) / layer.height.coerceAtLeast(1)).coerceIn(0f, 1f))
+                                        .apply()
+                                } else {
+                                    // Keep the original ACTION_DOWN anchor for the whole gesture.
+                                    // The previous code reused downRawX/Y during MOVE, making the
+                                    // release delta nearly zero and preventing reliable skill aiming.
+                                    val inputSurface = surfaceView
+                                    val sourceWidth = (inputSurface?.width ?: layer.width).coerceAtLeast(1)
+                                    val sourceHeight = (inputSurface?.height ?: layer.height).coerceAtLeast(1)
+                                    val isAimButton = key == "S1" || key == "S2" || key == "S3" || key == "FLICKER"
+                                    val scaleX = targetWidth.toFloat() / sourceWidth
+                                    val scaleY = targetHeight.toFloat() / sourceHeight
+                                    val rawDx = if (isAimButton) (event.rawX - downRawX) * scaleX else 0f
+                                    val rawDy = if (isAimButton) (event.rawY - downRawY) * scaleY else 0f
+                                    val maxAimRadius = size * 1.5f * min(scaleX, scaleY)
+                                    val distance = hypot(rawDx, rawDy)
+                                    val aimScale = if (distance > maxAimRadius && distance > 0f) maxAimRadius / distance else 1f
+                                    val dxInput = rawDx * aimScale
+                                    val dyInput = rawDy * aimScale
+                                    injectTouch(MotionEvent.ACTION_UP,
+                                        (aimStartX + dxInput).coerceIn(0f, (targetWidth - 1).toFloat()),
+                                        (aimStartY + dyInput).coerceIn(0f, (targetHeight - 1).toFloat()))
+                                }
+                                aimRing.visibility = View.GONE
+                                aimDot.visibility = View.GONE
+                                view.scaleX = 1f; view.scaleY = 1f
+                                true
+                            }
+                            else -> true
+                        }
+                    }
+                }
+                holder.addView(circle, FrameLayout.LayoutParams(size, size, Gravity.TOP or Gravity.CENTER_HORIZONTAL))
+                holder.addView(TextView(this).apply {
+                    text = when (spec.label) { "FIRE ALL" -> "SERANG BEBAS"; "REGEN" -> "REGENERASI"; "FLICKER" -> "KILAT"; "S1" -> "SKILL 1"; "S2" -> "SKILL 2"; "S3" -> "ULTI"; "CC" -> "KENDALI"; "CONCEAL" -> "SAMAR"; "ATTACK" -> "SERANG"; else -> spec.label }; gravity = Gravity.CENTER; setTextColor(Color.WHITE); textSize = 8f
+                    typeface = Typeface.DEFAULT_BOLD; setShadowLayer(dp(2).toFloat(), 1f, 1f, Color.BLACK)
+                }, FrameLayout.LayoutParams(-1, dp(14), Gravity.BOTTOM))
+                val holderHeight = size + dp(14)
+                val x = (deckX * layer.width).roundToInt() - size / 2
+                val y = (deckY * layer.height).roundToInt() - (size + dp(14)) / 2
+                layer.addView(holder, FrameLayout.LayoutParams(size, holderHeight).apply {
+                    leftMargin = x.coerceIn(0, (layer.width - size).coerceAtLeast(0))
+                    topMargin = y.coerceIn(0, (layer.height - holderHeight).coerceAtLeast(0))
+                })
+            }
+        }
     }
 
     /** Compact Game Boy-style controller: D-pad on the left, A/B on the right. */
@@ -4049,7 +4662,8 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 alpha = 0f
                 translationY = dp(28).toFloat()
             }
-            content.addView(deck, LinearLayout.LayoutParams(-1, 0, keyboardDeckWeight()))
+            content.addView(deck, laptopDeckLayoutParams())
+            updateLaptopHostLayout()
             deck.post {
                 deck.animate()
                     .alpha(1f)
@@ -4058,12 +4672,13 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                     .setDuration(360L)
                     .start()
             }
-            cursorView?.contentHeightFraction = desktopPaneFraction()
+            cursorView?.contentHeightFraction = if (isLandscapeGamepadHost()) 1f else desktopPaneFraction()
             menuScrim?.bringToFront()
             menu?.bringToFront()
             performanceHud?.bringToFront()
         } else {
             restoreDextopSwipeIme()
+            updateLaptopHostLayout(forceStandard = true)
             // Style is disabled from inside the visible operation overlay.
             // Routing directly to the desktop here bypasses that still-open
             // overlay (including its close button and edge recognizer), which
@@ -4120,6 +4735,53 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         syncCoverInputForKeyboardStyle()
     }
 
+    private fun isLandscapeGamepadHost(): Boolean =
+        laptopModeActive &&
+            keyboardDeckStyle == KeyboardDeckStyle.GAMEPAD &&
+            resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    private fun laptopDeckLayoutParams(): LinearLayout.LayoutParams =
+        if (isLandscapeGamepadHost()) {
+            LinearLayout.LayoutParams(0, -1, 1f)
+        } else {
+            LinearLayout.LayoutParams(-1, 0, keyboardDeckWeight())
+        }
+
+    private fun updateLaptopHostLayout(forceStandard: Boolean = false) {
+        val content = laptopContent ?: return
+        val surface = surfaceView ?: return
+        val horizontal = !forceStandard && isLandscapeGamepadHost()
+        content.orientation = if (horizontal) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+
+        if (horizontal && laptopLandscapeAnalogDeck == null) {
+            val palette = laptopPalette()
+            laptopLandscapeAnalogDeck = buildLandscapeAnalogDeck(palette).also { analog ->
+                content.addView(analog, 0, LinearLayout.LayoutParams(0, -1, .5f))
+            }
+        } else if (!horizontal) {
+            laptopLandscapeAnalogDeck?.let { content.removeView(it) }
+            laptopLandscapeAnalogDeck = null
+        }
+
+        val params = surface.layoutParams as? LinearLayout.LayoutParams
+        if (params != null) {
+            params.width = if (horizontal) 0 else -1
+            params.height = if (horizontal) -1 else 0
+            params.weight = if (horizontal) 1.35f else 1f
+            surface.layoutParams = params
+        }
+        // Give the right-hand skill panel more width; keep the mirrored play area
+        // broad enough to remain usable on landscape phones.
+        // Balanced side panels keep the mirrored game surface visually centered.
+        laptopLandscapeAnalogDeck?.layoutParams = LinearLayout.LayoutParams(0, -1, .58f)
+        laptopDeck?.let {
+            it.layoutParams = if (horizontal) LinearLayout.LayoutParams(0, -1, .58f)
+                else laptopDeckLayoutParams()
+        }
+        content.requestLayout()
+        surface.requestLayout()
+    }
+
     private fun switchActiveKeyboardStyle(style: KeyboardDeckStyle) {
         if (!laptopModeActive || keyboardDeckStyle == style) return
         val content = laptopContent ?: return
@@ -4143,8 +4805,9 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             alpha = 0f
             translationY = dp(20).toFloat()
         }
-        content.addView(deck, LinearLayout.LayoutParams(-1, 0, keyboardDeckWeight()))
-        cursorView?.contentHeightFraction = desktopPaneFraction()
+        content.addView(deck, laptopDeckLayoutParams())
+        updateLaptopHostLayout()
+        cursorView?.contentHeightFraction = if (isLandscapeGamepadHost()) 1f else desktopPaneFraction()
         deck.animate()
             .alpha(1f)
             .translationY(0f)
@@ -5542,12 +6205,20 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 )
                 return@postDelayed
             }
-            val expectedHeight = if (enabled) {
+            val landscapeGamepadHost = enabled && isLandscapeGamepadHost()
+            val expectedWidth = if (landscapeGamepadHost) {
+                (content.width * 1.5f / 2.5f).toInt()
+            } else content.width
+            val expectedHeight = if (enabled && !landscapeGamepadHost) {
                 (content.height * desktopPaneFraction()).toInt()
             } else content.height
-            if ((surface.width <= 0 || kotlin.math.abs(surface.height - expectedHeight) > 2) &&
-                attempt < 20
-            ) {
+            val mismatch = if (landscapeGamepadHost) {
+                surface.width <= 0 || kotlin.math.abs(surface.width - expectedWidth) > 3 ||
+                    kotlin.math.abs(surface.height - expectedHeight) > 3
+            } else {
+                surface.width <= 0 || kotlin.math.abs(surface.height - expectedHeight) > 2
+            }
+            if (mismatch && attempt < 20) {
                 applyLaptopGeometryWhenLaidOut(enabled, attempt + 1, baseOverride, preserveMenu)
                 return@postDelayed
             }
@@ -7673,6 +8344,14 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         endOverlayTextInput()
         setOverlayFocusable(false)
         panel.removeAllViews()
+        panel.minimumWidth = dp(420)
+        (panel.parent as? View)?.let { parentView ->
+            val params = parentView.layoutParams
+            if (params is FrameLayout.LayoutParams && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                params.width = maxOf(params.width, dp(420))
+                parentView.layoutParams = params
+            }
+        }
         panel.addView(
             menuTitle(
                 "Dextop",
@@ -7683,6 +8362,36 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 toggleWorkspacePanel()
             })
         addCustomControls(panel, overlayButtonOrder())
+        panel.addView(actionButton(R.drawable.ic_edit, "Atur Tombol dan Pemetaan") { showVisualMappingEditor() })
+        val statusPrefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
+        val statusHidden = statusPrefs.getBoolean("android_status_bar_hidden", false)
+        panel.addView(actionButton(
+            R.drawable.ic_edit,
+            if (statusHidden) "Tampilkan Bilah Status Android" else "Sembunyikan Bilah Status Android"
+        ) {
+            val hide = !statusPrefs.getBoolean("android_status_bar_hidden", false)
+            recentsExecutor.execute {
+                val result = if (hide) {
+                    privilegedAccess.execute("settings", "put", "global", "policy_control", "immersive.status=*")
+                } else {
+                    privilegedAccess.execute("settings", "delete", "global", "policy_control")
+                }
+                Handler(Looper.getMainLooper()).post {
+                    if (result.succeeded) {
+                        statusPrefs.edit().putBoolean("android_status_bar_hidden", hide).apply()
+                        showMainMenu(panel)
+                    } else {
+                        Log.w(logTag, "status bar toggle failed: ${result.error}")
+                    }
+                }
+            }
+        })
+        val navigationRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        navigationRow.addView(actionButton(R.drawable.ic_chevron, "KEMBALI") { performGlobalAction(GLOBAL_ACTION_BACK) },
+            LinearLayout.LayoutParams(0, dp(44), 1f).apply { rightMargin = dp(5) })
+        navigationRow.addView(actionButton(R.drawable.ic_chevron, "BERANDA") { performGlobalAction(GLOBAL_ACTION_HOME) },
+            LinearLayout.LayoutParams(0, dp(44), 1f).apply { leftMargin = dp(5) })
+        panel.addView(navigationRow, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(4) })
         panel.addView(
             actionButton(
                 if (overlayLayoutEditing) R.drawable.ic_chevron else R.drawable.ic_edit,
@@ -7692,6 +8401,128 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 if (demoMode) demoExplanation(NativeStrings.text("nativeYouCanRearrangeTheLayoutInThe"))
                 showMainMenu(panel)
             })
+    }
+
+    private fun showVisualMappingEditor() {
+        val host = root ?: return
+        val gameSurface = surfaceView ?: return
+        if (gameSurface.width <= 0 || gameSurface.height <= 0) {
+            gameSurface.post { showVisualMappingEditor() }
+            return
+        }
+        visualMappingOverlay?.let { old -> runCatching { host.removeView(old) } }
+        val prefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
+        val overlay = FrameLayout(this).apply { clipChildren = false; clipToPadding = false; setBackgroundColor(Color.argb(28, 0, 0, 0)) }
+        visualMappingOverlay = overlay
+        val toolbar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(8), dp(4), dp(8), dp(4))
+            background = GradientDrawable().apply { setColor(Color.argb(235, 11, 17, 26)); cornerRadius = dp(16).toFloat(); setStroke(dp(1), Color.argb(180, 100, 200, 255)) }
+        }
+        toolbar.addView(TextView(this).apply { text = "ATUR PEMETAAN SENTUH"; setTextColor(Color.WHITE); textSize = 11f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER_VERTICAL },
+            LinearLayout.LayoutParams(0, dp(38), 1f))
+        toolbar.addView(TextView(this).apply {
+            text = "ULANG"; setTextColor(Color.rgb(255,190,95)); textSize = 10f; gravity = Gravity.CENTER
+            setOnClickListener {
+                prefs.edit().clear().apply()
+                showVisualMappingEditor()
+            }
+        }, LinearLayout.LayoutParams(dp(58), dp(38)))
+        toolbar.addView(TextView(this).apply {
+            text = "TUTUP"; setTextColor(Color.rgb(100,220,255)); textSize = 10f; gravity = Gravity.CENTER
+            setOnClickListener { visualMappingOverlay?.let { runCatching { host.removeView(it) } }; visualMappingOverlay = null }
+        }, LinearLayout.LayoutParams(dp(66), dp(38)))
+        overlay.addView(toolbar, FrameLayout.LayoutParams(-1, dp(46), Gravity.TOP))
+        val specs = listOf(
+            Triple("FIRE ALL", "❄", Color.rgb(90,180,229)), Triple("REGEN", "✚", Color.rgb(108,224,108)),
+            Triple("FLICKER", "⚡", Color.rgb(255,204,0)), Triple("BUFF", "◆", Color.rgb(102,179,255)),
+            Triple("S1", "▲", Color.rgb(255,157,0)), Triple("S2", "◆", Color.rgb(0,229,255)),
+            Triple("S3", "✦", Color.rgb(196,110,255)), Triple("CC", "✦", Color.rgb(163,102,255)),
+            Triple("CONCEAL", "◉", Color.rgb(77,255,234)), Triple("ATTACK", "⚔", Color.rgb(153,204,255))
+        )
+        overlay.post {
+            if (overlay.width <= 0 || overlay.height <= 0) return@post
+            specs.forEach { spec ->
+                val key = spec.first
+                val prefKey = key.replace(" ", "_")
+                val baseSizeDp = when (key) {
+                    "S3", "ATTACK" -> 88
+                    "S1", "S2", "FLICKER" -> 72
+                    "BUFF", "CONCEAL", "CC" -> 64
+                    else -> 60
+                }
+                // Use the same independent per-button size setting as the right-hand deck.
+                // This makes the mapping editor accurately preview the size users selected.
+                val sizeScale = prefs.getFloat("${prefKey}_size", 3.0f).coerceIn(.75f, 18f) / 3.0f
+                val size = (dp(baseSizeDp) * sizeScale).roundToInt()
+                    .coerceIn(dp(44), (min(overlay.width, overlay.height) * .48f).roundToInt().coerceAtLeast(dp(44)))
+                val defaults = when (key) {
+                    "FIRE ALL" -> .55f to .86f
+                    "REGEN" -> .68f to .86f
+                    "FLICKER" -> .80f to .86f
+                    "BUFF" -> .90f to .84f
+                    "S1" -> .55f to .72f
+                    "S2" -> .72f to .62f
+                    "S3" -> .84f to .80f
+                    "CC" -> .72f to .42f
+                    "CONCEAL" -> .91f to .43f
+                    else -> .94f to .88f
+                }
+                val defaultX = defaults.first
+                val defaultY = defaults.second
+                val x = (prefs.getFloat("${prefKey}_x", defaultX) * overlay.width - size / 2f).roundToInt().coerceIn(0, (overlay.width-size).coerceAtLeast(0))
+                val y = (prefs.getFloat("${prefKey}_y", defaultY) * overlay.height - size / 2f).roundToInt().coerceIn(dp(48), (overlay.height-size).coerceAtLeast(dp(48)))
+                val trigger = TextView(this).apply {
+                    text = "${spec.second}\n$key"; gravity = Gravity.CENTER; textSize = if (key == "ATTACK" || key == "S3") 16f else 13f; typeface = Typeface.DEFAULT_BOLD; setTextColor(spec.third)
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(Color.argb(220, 11, 24, 42))
+                        setStroke(dp(if (key == "S3" || key == "ATTACK") 3 else 2), spec.third)
+                    }
+                    setShadowLayer(dp(8).toFloat(), 0f, 0f, spec.third)
+                    elevation = dp(8).toFloat()
+                    var downX = 0f; var downY = 0f; var startX = x; var startY = y; var moved = false; var lastTapAt = 0L
+                    rotation = prefs.getFloat("${prefKey}_rotation", if (key == "ATTACK") 45f else 0f)
+                    contentDescription = "Geser untuk mengatur posisi. Ketuk dua kali untuk memutar tombol."
+                    setOnTouchListener { view, event ->
+                        val lp = view.layoutParams as FrameLayout.LayoutParams
+                        when (event.actionMasked) {
+                            MotionEvent.ACTION_DOWN -> { downX=event.rawX; downY=event.rawY; startX=lp.leftMargin; startY=lp.topMargin; moved=false; true }
+                            MotionEvent.ACTION_MOVE -> {
+                                val dx = event.rawX-downX; val dy = event.rawY-downY
+                                if (kotlin.math.abs(dx) > dp(4) || kotlin.math.abs(dy) > dp(4)) moved=true
+                                lp.leftMargin=(startX+dx).roundToInt().coerceIn(0,(overlay.width-view.width).coerceAtLeast(0))
+                                lp.topMargin=(startY+dy).roundToInt().coerceIn(dp(48),(overlay.height-view.height).coerceAtLeast(dp(48)))
+                                view.layoutParams=lp; true
+                            }
+                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                if (!moved && event.actionMasked == MotionEvent.ACTION_UP) {
+                                    val now = SystemClock.uptimeMillis()
+                                    if (now - lastTapAt < 350L) {
+                                        val nextRotation = (prefs.getFloat("${prefKey}_rotation", if (key == "ATTACK") 45f else 0f) + 15f) % 360f
+                                        prefs.edit().putFloat("${prefKey}_rotation", nextRotation).apply()
+                                        view.rotation = nextRotation
+                                        lastTapAt = 0L
+                                    } else lastTapAt = now
+                                }
+                                prefs.edit().putFloat("${prefKey}_x",((lp.leftMargin + view.width / 2f)/overlay.width.coerceAtLeast(1)).coerceIn(0f,1f))
+                                    .putFloat("${prefKey}_y",((lp.topMargin + view.height / 2f)/overlay.height.coerceAtLeast(1)).coerceIn(0f,1f)).apply()
+                                true
+                            }
+                            else -> true
+                        }
+                    }
+                }
+                overlay.addView(trigger, FrameLayout.LayoutParams(size,size).apply { leftMargin=x; topMargin=y })
+            }
+        }
+        val hostLocation = IntArray(2); val surfaceLocation = IntArray(2)
+        host.getLocationInWindow(hostLocation); gameSurface.getLocationInWindow(surfaceLocation)
+        host.addView(overlay, FrameLayout.LayoutParams(gameSurface.width, gameSurface.height).apply {
+            leftMargin = surfaceLocation[0] - hostLocation[0]
+            topMargin = surfaceLocation[1] - hostLocation[1]
+        })
     }
 
     private fun inputModesView(): View {
@@ -9568,9 +10399,30 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
     private fun displayRotationFor(@Suppress("UNUSED_PARAMETER") portrait: Boolean = requestedPortrait): Int = 0
 
     private fun updateCursorPosition(x: Float = cursorX, y: Float = cursorY) {
-        val normalizedX = x / targetWidth.coerceAtLeast(1)
-        val normalizedY = y / targetHeight.coerceAtLeast(1)
-        cursorView?.update(normalizedX, normalizedY)
+        val normalizedX = (x / targetWidth.coerceAtLeast(1)).coerceIn(0f, 1f)
+        val normalizedY = (y / targetHeight.coerceAtLeast(1)).coerceIn(0f, 1f)
+        val view = surfaceView
+        val gamepadLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE &&
+            keyboardDeckStyle == KeyboardDeckStyle.GAMEPAD && view != null &&
+            view.width > 0 && view.height > 0
+        if (gamepadLandscape && view != null) {
+            // The software cursor is drawn in the physical host window, while the
+            // game surface occupies only the center column between the two decks.
+            // Convert virtual-display fractions into that surface's on-screen rectangle.
+            val location = IntArray(2)
+            view.getLocationOnScreen(location)
+            val metrics = resources.displayMetrics
+            val screenWidth = metrics.widthPixels.coerceAtLeast(1)
+            val screenHeight = metrics.heightPixels.coerceAtLeast(1)
+            val screenX = location[0] + normalizedX * view.width
+            val screenY = location[1] + normalizedY * view.height
+            cursorView?.update(
+                (screenX / screenWidth).coerceIn(0f, 1f),
+                (screenY / screenHeight).coerceIn(0f, 1f)
+            )
+        } else {
+            cursorView?.update(normalizedX, normalizedY)
+        }
     }
 
     private fun toggleDisplayRotation180() {
@@ -9843,17 +10695,6 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         }
         val nativeTouchpadAvailable = useVirtualMouse &&
                 virtualPointerRegisteredProfile == "touchpad"
-        if (experimentalMultiTouch && !nativeTouchpadAvailable && !imeDirectTouch &&
-            handleExperimentalEdgeGesture(event)
-        ) {
-            if (nativeTouchpadGestureActive || virtualTouchpadActiveContactCount() > 0) {
-                finishVirtualTouchpadGesture(
-                    "dextop_edge_gesture_intercept",
-                    allowVirtualPointer
-                )
-            }
-            return true
-        }
         if (useDirectTouch && experimentalMultiTouch) {
             injectDirectTouch(event)
             if (imeDirectTouch && (event.actionMasked == MotionEvent.ACTION_UP ||
@@ -10018,12 +10859,9 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 if (completedDirectTouch) {
                     Unit
                 } else if (threeFinger || maxPointers >= 3) {
-                    // A real touchpad profile has already bypassed the legacy
-                    // edge recognizer above. Always retain Dextop's configured
-                    // three-finger action as the emergency menu/exit path.
-                    if (!experimentalMultiTouch || nativeTouchpadAvailable) {
-                        performConfiguredGesture()
-                    }
+                    // The assistant bubble is now the explicit menu entry point.
+                    // Consume three-finger gestures only to avoid accidental clicks.
+                    // Do not dispatch the former configured menu gesture here.
                 } else if (longPressTriggered && dragHeld) {
                     if (useVirtualMouse) {
                         virtualMouseButton("BTN_LEFT", false, allowVirtualPointer)
@@ -11241,16 +12079,36 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             .getOrDefault(false)
     }
 
+    /**
+     * Translate the software cursor's configured coordinate space into the
+     * actual virtual display input space. Gamepad mode narrows the mirrored
+     * SurfaceView to make room for the side decks; using host dimensions here
+     * would make taps drift toward the right on landscape displays.
+     */
+    private fun mapCursorToInputDisplay(x: Float, y: Float): Pair<Float, Float> {
+        val display = getSystemService(DisplayManager::class.java).getDisplay(targetDisplayId)
+            ?: return x.coerceIn(0f, targetWidth - 1f) to y.coerceIn(0f, targetHeight - 1f)
+        val metrics = runCatching {
+            android.util.DisplayMetrics().also { display.getRealMetrics(it) }
+        }.getOrNull() ?: return x.coerceIn(0f, targetWidth - 1f) to y.coerceIn(0f, targetHeight - 1f)
+        val inputWidth = metrics.widthPixels.takeIf { it > 0 } ?: targetWidth
+        val inputHeight = metrics.heightPixels.takeIf { it > 0 } ?: targetHeight
+        val mappedX = (x.coerceIn(0f, targetWidth - 1f) / targetWidth.coerceAtLeast(1)) * inputWidth
+        val mappedY = (y.coerceIn(0f, targetHeight - 1f) / targetHeight.coerceAtLeast(1)) * inputHeight
+        return mappedX.coerceIn(0f, inputWidth - 1f) to mappedY.coerceIn(0f, inputHeight - 1f)
+    }
+
     private fun injectTouch(action: Int, x: Float, y: Float) {
         if (targetDisplayId < 0) return
         runCatching {
+            val (inputX, inputY) = mapCursorToInputDisplay(x, y)
             val properties = MotionEvent.PointerProperties().apply {
                 id = 0
                 toolType = MotionEvent.TOOL_TYPE_FINGER
             }
             val coordinates = MotionEvent.PointerCoords().apply {
-                this.x = x
-                this.y = y
+                this.x = inputX
+                this.y = inputY
                 pressure = if (action == MotionEvent.ACTION_UP) 0f else 1f
                 size = 1f
             }
@@ -13416,6 +14274,10 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         menu = null
         menuScrim = null
         performanceHud = null
+        assistantBubble?.let { runCatching { windowManager?.removeView(it) } }
+        assistantBubble = null
+        assistantBubbleParams = null
+        laptopLandscapeAnalogDeck = null
         laptopDeck = null
         laptopDeckContent = null
         demoInfoView = null

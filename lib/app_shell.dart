@@ -67,6 +67,8 @@ class _DextopAppState extends State<DextopApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      // Keep the app UI in Indonesian regardless of the phone's system language.
+      locale: const Locale('id'),
       themeMode: themeMode,
       theme: appTheme(Brightness.light),
       darkTheme: appTheme(Brightness.dark),

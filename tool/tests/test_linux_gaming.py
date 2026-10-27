@@ -20,7 +20,8 @@ def load(name, path):
 class GamingTest(unittest.TestCase):
     def setUp(self):
         self.gaming = load('dextop_gaming', RESOURCES / 'dextop-gaming')
-        self.compat = load('upstream_steam_compat', RESOURCES / 'droiddeck/linuxfs/usr/local/bin/steam-compatibility')
+        compat_path = RESOURCES / 'droiddeck/linuxfs/usr/local/bin/steam-compatibility'
+        self.compat = load('upstream_steam_compat', compat_path) if compat_path.is_file() else None
 
     def test_native_runtime_chain_preserves_game_arguments(self):
         args = ['/steam/FEX-Emu/fex-compat-tool', 'waitforexitandrun', '--',
@@ -103,6 +104,8 @@ class GamingTest(unittest.TestCase):
             self.assertIn('Exit status: 7', log)
             self.assertNotIn('do-not-log', log)
 
+    @unittest.skipUnless((RESOURCES / 'droiddeck/linuxfs/usr/local/bin/steam-compatibility').is_file(),
+                         'Upstream DroidDeck steam-compatibility payload is not present in this checkout')
     def test_register_preserves_custom_tools_and_other_settings(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.gaming.STEAM = tmp

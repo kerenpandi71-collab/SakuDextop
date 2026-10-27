@@ -126,14 +126,27 @@ internal object LinuxSteam {
         "gaming/libdextop_unixsock-i386.bin" to "usr/local/lib/dextop-gaming/preload/i386/libdextop_unixsock.so",
     )
 
-    private fun gamingResource(name: String) = requireNotNull(LinuxSteam::class.java.getResourceAsStream("/moe/n4tsu/dextop/linux/$name")) {
-        "Game runtime resource $name is not packaged"
-    }
+    private fun gamingResource(name: String) =
+        LinuxSteam::class.java.getResourceAsStream("/moe/n4tsu/dextop/linux/$name")
+
+    /**
+     * Some DroidDeck-owned payloads are not redistributed in this source checkout.
+     * Keep staging every payload that is present, but do not fail all Linux setup
+     * and unit tests merely because an optional upstream file is absent. Resources
+     * used by the Steam installer itself remain required below.
+     */
+    private fun isOptionalUpstreamPayload(name: String): Boolean =
+        name.startsWith("droiddeck/linuxfs/")
 
     /** The x86 compatibility libraries must match the guest, not Android's ARM64 ABI. */
     private fun stageGaming(root: java.io.File) {
         gamingResources.forEach { (resource, relative) ->
-            val bytes = gamingResource(resource).use { it.readBytes() }
+            val stream = gamingResource(resource)
+            if (stream == null) {
+                check(isOptionalUpstreamPayload(resource)) { "Game runtime resource $resource is not packaged" }
+                return@forEach
+            }
+            val bytes = stream.use { it.readBytes() }
             java.io.File(root, relative).apply {
                 parentFile?.mkdirs()
                 if (!isFile || !readBytes().contentEquals(bytes)) {
@@ -192,10 +205,14 @@ internal object LinuxSteam {
         appendLine("chmod 755 $INSTALLER; }")
         appendLine("HOME=/root bash $INSTALLER")
         gamingResources.forEach { (resource, relative) ->
-            val encoded = gamingResource(resource).use { java.util.Base64.getEncoder().encodeToString(it.readBytes()) }
+            val stream = gamingResource(resource)
+            if (stream == null) {
+                check(isOptionalUpstreamPayload(resource)) { "Game runtime resource $resource is not packaged" }
+                return@forEach
+            }
+            val encoded = stream.use { java.util.Base64.getEncoder().encodeToString(it.readBytes()) }
             appendLine("mkdir -p /${relative.substringBeforeLast('/')}")
-            // Repair can run while a game still maps a compatibility library.
-            // Preserve that inode until readers exit, just like stageGaming().
+            // Repair can run while a game still maps this library. Replace atomically.
             appendLine("printf '%s' '$encoded' | base64 -d > /$relative.staged")
             appendLine("chmod 755 /$relative.staged")
             appendLine("mv -f /$relative.staged /$relative")

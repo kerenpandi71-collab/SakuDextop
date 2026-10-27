@@ -3,9 +3,9 @@ package moe.n4tsu.dextop.plasma
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.graphics.Color
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
@@ -58,16 +58,12 @@ class PlasmaDesktopActivity : Activity() {
     }
 
     internal fun applySettings() {
-        val settings = PlasmaSettings.load(this)
-        val showSystem = settings.wallpaper == "system"
-        if (showSystem) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
-            window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT))
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
-            window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.BLACK))
-        }
-        desktop?.drawWallpaper = !showSystem
+        // Use Android's current system wallpaper instead of drawing a custom
+        // Plasma-style wallpaper. The activity remains the desktop background
+        // layer; window management and input handling stay in the shell.
+        window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
+        window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT))
+        desktop?.drawWallpaper = false
         desktop?.invalidate()
     }
 

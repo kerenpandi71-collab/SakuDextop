@@ -34,10 +34,25 @@ class _SamsungExperimentalSettingsTileState
       final state = await widget.bridge.samsungDesktopSettings();
       isSupported = state['supported'] == true;
     } catch (_) {}
+    var savedEnabled = prefs.getBool('experimental_samsung_desktop_settings');
+    // Force-enable the Samsung desktop integration on supported Samsung
+    // devices. The native bridge still validates device support and requires
+    // privileged access for writes; this flag only exposes the feature UI.
+    // Always capture the original values before enabling it so users retain a
+    // restore path even when upgrading an existing installation.
+    if (isSupported) {
+      try {
+        await widget.bridge.backupSamsungDesktopSettings();
+        await prefs.setBool('experimental_samsung_desktop_settings', true);
+        savedEnabled = true;
+      } catch (_) {
+        savedEnabled = false;
+      }
+    }
     if (!mounted) return;
     setState(() {
       supported = isSupported;
-      enabled = prefs.getBool('experimental_samsung_desktop_settings') ?? false;
+      enabled = savedEnabled ?? false;
       loading = false;
     });
   }

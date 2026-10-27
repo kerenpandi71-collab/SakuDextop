@@ -29,6 +29,7 @@ LOCALES = {
     "ru": "app_ru.arb",
     "pt": "app_pt.arb",
     "pt_BR": "app_pt_BR.arb",
+    "id": "app_id.arb",
 }
 ANDROID_RESOURCE_DIRS = {
     "ja": "values",
@@ -38,6 +39,7 @@ ANDROID_RESOURCE_DIRS = {
     "ru": "values-ru",
     "pt": "values-pt",
     "pt_BR": "values-pt-rBR",
+    "id": "values-id",
 }
 ANDROID_KEYS = {
     "androidSwipeImeLabel": "dextop_swipe_ime_label",
