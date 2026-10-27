@@ -1453,13 +1453,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     label: Text(currentLocalizations().home),
                   ),
                   NavigationRailDestination(
-                    icon: const PenguinIcon(),
-                    selectedIcon: const PenguinIcon(filled: true),
-                    label: Text(
-                      currentLocalizations().nativePlasmaCategoryLinux,
-                    ),
-                  ),
-                  NavigationRailDestination(
                     icon: _settingsNavigationIcon(Icons.tune_outlined),
                     selectedIcon: _settingsNavigationIcon(Icons.tune_rounded),
                     label: Text(currentLocalizations().settings),
@@ -1485,11 +1478,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             label: currentLocalizations().home,
           ),
           NavigationDestination(
-            icon: const PenguinIcon(),
-            selectedIcon: const PenguinIcon(filled: true),
-            label: currentLocalizations().nativePlasmaCategoryLinux,
-          ),
-          NavigationDestination(
             icon: _settingsNavigationIcon(Icons.tune_outlined),
             selectedIcon: _settingsNavigationIcon(Icons.tune_rounded),
             label: currentLocalizations().settings,
@@ -1505,22 +1493,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     switchOutCurve: Curves.easeInCubic,
     child: switch (page) {
       0 => overview(),
-      1 => LinuxPage(
-        key: const ValueKey('linux'),
-        onSwitchToPlasmaV2: () => setWindowManager('dextop_plasma_v2'),
-        onSetupPrivilege: _showEmbeddedPrivilegeSetup,
-      ),
       _ => settings(),
     },
   );
 
   void selectPage(int value) {
     setState(() => page = value);
-    AppAnalytics.screen(switch (value) {
-      0 => 'home',
-      1 => 'linux',
-      _ => 'settings',
-    });
+    AppAnalytics.screen(value == 0 ? 'home' : 'settings');
   }
 
   Widget _settingsNavigationIcon(IconData icon) => Badge(
