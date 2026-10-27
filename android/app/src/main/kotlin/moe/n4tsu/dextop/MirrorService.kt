@@ -3853,6 +3853,31 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         // MOBA layout: the move handle sits above the stick and can reposition
         // the stick vertically within the left deck. Save the position per user.
         val stickPrefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
+        val gamepad2Button = TextView(this@MirrorService).apply {
+            text = if (stickPrefs.getBoolean("gamepad_2_battle_royale", false)) "🎮  GAMEPAD 2 · BR" else "🎮  GAMEPAD 2"
+            gravity = Gravity.CENTER
+            textSize = 11f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+            background = GradientDrawable().apply {
+                cornerRadius = dp(12).toFloat()
+                setColor(Color.argb(220, 20, 105, 150))
+                setStroke(dp(1), Color.rgb(100, 220, 255))
+            }
+            setOnClickListener {
+                val enabled = !stickPrefs.getBoolean("gamepad_2_battle_royale", false)
+                stickPrefs.edit().putBoolean("gamepad_2_battle_royale", enabled).apply()
+                text = if (enabled) "🎮  GAMEPAD 2 · BR" else "🎮  GAMEPAD 2"
+                laptopDeckContent?.let { actionContent ->
+                    actionContent.removeAllViews()
+                    buildLandscapeActionDeck(actionContent, laptopPalette())
+                }
+                performLaptopHaptic(this)
+            }
+        }
+        addView(gamepad2Button, LinearLayout.LayoutParams(-1, dp(38)).apply {
+            bottomMargin = dp(4)
+        })
         val moveLayer = FrameLayout(this@MirrorService).apply {
             clipChildren = false
             clipToPadding = false
@@ -3921,8 +3946,13 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
     private fun buildLandscapeActionDeck(content: LinearLayout, palette: LaptopPalette) {
         val prefs = getSharedPreferences("saku_visual_mapping", MODE_PRIVATE)
         val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val battleRoyaleMode = prefs.getBoolean("gamepad_2_battle_royale", false)
         header.addView(TextView(this).apply {
-            text = "KONTROL ARENA SAKU"; gravity = Gravity.CENTER_VERTICAL; setTextColor(palette.text); textSize = 10f
+            text = if (battleRoyaleMode) "BATTLE ROYALE" else "KONTROL ARENA SAKU"
+            gravity = Gravity.CENTER_VERTICAL
+            setTextColor(palette.text)
+            textSize = 10f
+            typeface = Typeface.DEFAULT_BOLD
         }, LinearLayout.LayoutParams(0, dp(32), 1f))
         fun headerAction(label: String, width: Int, action: () -> Unit) {
             header.addView(TextView(this).apply {
@@ -3942,8 +3972,14 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 leftMargin = dp(2); rightMargin = dp(2)
             })
         }
-        val buttonKeys = listOf("FIRE_ALL", "REGEN", "FLICKER", "BUFF", "S1", "S2", "S3", "CC", "CONCEAL", "ATTACK")
+        val buttonKeys = if (battleRoyaleMode) {
+            listOf("BR_FIRE", "BR_AIM", "BR_JUMP", "BR_CROUCH", "BR_PRONE", "BR_RELOAD", "BR_WEAPON", "BR_SCOPE")
+        } else {
+            listOf("FIRE_ALL", "REGEN", "FLICKER", "BUFF", "S1", "S2", "S3", "CC", "CONCEAL", "ATTACK")
+        }
         fun displayButtonName(key: String): String = when (key) {
+            "BR_FIRE" -> "TEMBAK"; "BR_AIM" -> "BIDIK"; "BR_JUMP" -> "LOMPAT"; "BR_CROUCH" -> "JONGKOK"
+            "BR_PRONE" -> "TIARAP"; "BR_RELOAD" -> "RELOAD"; "BR_WEAPON" -> "SENJATA"; "BR_SCOPE" -> "SCOPE"
             "FIRE_ALL" -> "SERANG BEBAS"; "REGEN" -> "REGENERASI"; "FLICKER" -> "KILAT"; "BUFF" -> "PENGUAT"
             "S1" -> "SKILL 1"; "S2" -> "SKILL 2"; "S3" -> "ULTI"; "CC" -> "KENDALI"; "CONCEAL" -> "PENYAMARAN"; "ATTACK" -> "SERANG"; else -> key
         }
@@ -3988,8 +4024,17 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             // Deck coordinates are intentionally separate from touch-map coordinates.
             // This prevents screen-wide mapping positions from collapsing all controls
             // into the narrow right-hand gamepad panel.
-            val specs = listOf(
-                // Default two-column layout keeps every control separated even on a narrow gamepad panel.
+            val specs = if (battleRoyaleMode) listOf(
+                SkillSpec("BR_FIRE", "●", Color.rgb(255, 82, 82), 48, .78f, .78f, .92f, .80f),
+                SkillSpec("BR_AIM", "◎", Color.rgb(100, 220, 255), 42, .78f, .56f, .82f, .55f),
+                SkillSpec("BR_JUMP", "↟", Color.rgb(255, 205, 70), 42, .25f, .14f, .84f, .24f),
+                SkillSpec("BR_CROUCH", "▾", Color.rgb(110, 225, 150), 38, .22f, .39f, .85f, .48f),
+                SkillSpec("BR_PRONE", "━", Color.rgb(175, 175, 255), 38, .22f, .60f, .85f, .64f),
+                SkillSpec("BR_RELOAD", "↻", Color.rgb(255, 170, 90), 40, .50f, .14f, .72f, .77f),
+                SkillSpec("BR_WEAPON", "⚔", Color.rgb(255, 150, 100), 42, .50f, .39f, .91f, .66f),
+                SkillSpec("BR_SCOPE", "⌖", Color.rgb(150, 220, 255), 40, .50f, .60f, .82f, .55f)
+            ) else listOf(
+                // Preserve the existing MOBA controls and their touch targets.
                 SkillSpec("FIRE ALL", "❄", Color.rgb(90,180,229), 38, .18f, .12f, .13f, .84f),
                 SkillSpec("REGEN", "✚", Color.rgb(108,224,108), 38, .66f, .12f, .29f, .84f),
                 SkillSpec("FLICKER", "⚡", Color.rgb(255,204,0), 40, .20f, .35f, .45f, .84f),
@@ -4699,9 +4744,10 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         }
         // Give the right-hand skill panel more width; keep the mirrored play area
         // broad enough to remain usable on landscape phones.
-        laptopLandscapeAnalogDeck?.layoutParams = LinearLayout.LayoutParams(0, -1, .45f)
+        // Balanced side panels keep the mirrored game surface visually centered.
+        laptopLandscapeAnalogDeck?.layoutParams = LinearLayout.LayoutParams(0, -1, .58f)
         laptopDeck?.let {
-            it.layoutParams = if (horizontal) LinearLayout.LayoutParams(0, -1, .70f)
+            it.layoutParams = if (horizontal) LinearLayout.LayoutParams(0, -1, .58f)
                 else laptopDeckLayoutParams()
         }
         content.requestLayout()
