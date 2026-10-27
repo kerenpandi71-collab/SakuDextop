@@ -72,13 +72,11 @@ class _DextopAppState extends State<DextopApp> {
       themeMode: themeMode,
       theme: appTheme(Brightness.light),
       darkTheme: appTheme(Brightness.dark),
-      builder: (context, child) => LinuxExpressive(child: child!),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
-        linuxMaterialUiLocalizations,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
       home: setupCompleted == null || desktopWindow == null
