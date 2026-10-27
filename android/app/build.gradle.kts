@@ -165,6 +165,10 @@ androidComponents {
 }
 
 dependencies {
+    // Required by legacy Linux Kotlin source files still compiled in the shared source set.
+    implementation("org.tukaani:xz:1.10")
+    implementation("org.apache.commons:commons-compress:1.28.0")
+    implementation("com.android.tools.build:apksig:8.11.1")
     implementation("com.caverock:androidsvg-aar:1.4")
     implementation("androidx.window:window:1.5.1")
     implementation("androidx.appcompat:appcompat:1.7.1")
