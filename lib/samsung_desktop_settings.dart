@@ -34,10 +34,24 @@ class _SamsungExperimentalSettingsTileState
       final state = await widget.bridge.samsungDesktopSettings();
       isSupported = state['supported'] == true;
     } catch (_) {}
+    var savedEnabled = prefs.getBool('experimental_samsung_desktop_settings');
+    // Enable Samsung's dedicated desktop-settings integration by default on
+    // supported Samsung devices, while preserving an explicit user opt-out.
+    // Capture the original platform values before enabling the integration so
+    // the settings page can always offer a safe restore path.
+    if (isSupported && savedEnabled == null) {
+      try {
+        await widget.bridge.backupSamsungDesktopSettings();
+        await prefs.setBool('experimental_samsung_desktop_settings', true);
+        savedEnabled = true;
+      } catch (_) {
+        savedEnabled = false;
+      }
+    }
     if (!mounted) return;
     setState(() {
       supported = isSupported;
-      enabled = prefs.getBool('experimental_samsung_desktop_settings') ?? false;
+      enabled = savedEnabled ?? false;
       loading = false;
     });
   }
