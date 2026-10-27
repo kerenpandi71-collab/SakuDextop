@@ -58,6 +58,6 @@ jobs:
         with:
           name: dextop-nightly-split-${{ github.sha }}
           path: |
-            build/app/outputs/flutter-apk/app-github-*-debug.apk
+            build/app/outputs/flutter-apk/*.apk
           if-no-files-found: error
           retention-days: 14
