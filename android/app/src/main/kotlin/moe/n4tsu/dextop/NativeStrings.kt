@@ -5,8 +5,9 @@ import java.util.Locale
 
 internal object NativeStrings {
     fun text(key: String): String {
-        val locale = Locale.getDefault()
-        val regional = if (locale.country.isBlank()) locale.language else "${locale.language}_${locale.country}"
+        // Native overlay menus should match the app's Indonesian UI language.
+        val locale = Locale("id")
+        val regional = locale.language
         return ((values[regional] ?: values[locale.language] ?: values.getValue("en"))[key]
             ?: values.getValue("en")[key]
             ?: key).replace("\\n", "\n")
