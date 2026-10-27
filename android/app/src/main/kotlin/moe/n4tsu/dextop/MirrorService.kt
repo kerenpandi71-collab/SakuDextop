@@ -3211,18 +3211,46 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         frame.addView(content, FrameLayout.LayoutParams(-1, -1, Gravity.TOP))
         frame.addView(scrim, FrameLayout.LayoutParams(-1, -1))
         frame.addView(controls, menuLayoutParams())
+        val hudPrefs = getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE)
         val hud = PerformanceHud(this) { inputMode() }.apply {
-            visibility = if (getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE)
-                    .getBoolean("flutter.performance_hud", false)
-            ) View.VISIBLE else View.GONE
-        }
-        frame.addView(
-            hud,
-            FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply {
-                topMargin = dp(18)
-                rightMargin = dp(18)
+            visibility = if (hudPrefs.getBoolean("flutter.performance_hud", false)) {
+                View.VISIBLE
+            } else {
+                View.GONE
             }
-        )
+        }
+        val hudLayout = FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.START).apply {
+            leftMargin = hudPrefs.getInt("flutter.performance_hud_x", dp(18)).coerceAtLeast(0)
+            topMargin = hudPrefs.getInt("flutter.performance_hud_y", dp(18)).coerceAtLeast(0)
+        }
+        hud.setOnTouchListener { view, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    view.tag = floatArrayOf(event.rawX, event.rawY,
+                        hudLayout.leftMargin.toFloat(), hudLayout.topMargin.toFloat())
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val start = view.tag as? FloatArray ?: return@setOnTouchListener true
+                    val maxX = (frame.width - view.width).coerceAtLeast(0)
+                    val maxY = (frame.height - view.height).coerceAtLeast(0)
+                    hudLayout.leftMargin = (start[2] + event.rawX - start[0]).toInt().coerceIn(0, maxX)
+                    hudLayout.topMargin = (start[3] + event.rawY - start[1]).toInt().coerceIn(0, maxY)
+                    frame.updateViewLayout(view, hudLayout)
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    hudPrefs.edit()
+                        .putInt("flutter.performance_hud_x", hudLayout.leftMargin)
+                        .putInt("flutter.performance_hud_y", hudLayout.topMargin)
+                        .apply()
+                    true
+                }
+                MotionEvent.ACTION_CANCEL -> true
+                else -> true
+            }
+        }
+        frame.addView(hud, hudLayout)
         val assistant = TextView(this).apply {
             text = "✦"
             gravity = Gravity.CENTER
