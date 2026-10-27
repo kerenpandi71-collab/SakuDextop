@@ -3880,7 +3880,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         }
         moveLayer.addView(positionHandle, FrameLayout.LayoutParams(-1, dp(34), Gravity.TOP))
         var handleDownY = 0f
-        var stickOffset = stickPrefs.getFloat("left_stick_vertical", .12f).coerceIn(0f, .7f)
+        var stickOffset = stickPrefs.getFloat("left_stick_vertical", .12f).coerceIn(0f, 1f)
         fun placeStick() {
             val available = (moveLayer.height - moveStickHolder.height).coerceAtLeast(0)
             val lp = moveStickHolder.layoutParams as? FrameLayout.LayoutParams ?: return
@@ -3894,7 +3894,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
                 MotionEvent.ACTION_DOWN -> { handleDownY = event.rawY; true }
                 MotionEvent.ACTION_MOVE -> {
                     val available = (moveLayer.height - moveStickHolder.height).coerceAtLeast(1)
-                    stickOffset = (stickOffset + (event.rawY - handleDownY) / available).coerceIn(0f, .7f)
+                    stickOffset = (stickOffset + (event.rawY - handleDownY) / available).coerceIn(0f, 1f)
                     handleDownY = event.rawY
                     stickPrefs.edit().putFloat("left_stick_vertical", stickOffset).apply()
                     placeStick()
