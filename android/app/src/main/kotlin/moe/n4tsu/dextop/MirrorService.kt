@@ -3864,7 +3864,7 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             clipToPadding = false
             addView(moveStick, FrameLayout.LayoutParams(-1, -1))
         }
-        moveLayer.addView(moveStickHolder, FrameLayout.LayoutParams(-1, (moveLayer.height * .72f).roundToInt().coerceAtLeast(dp(180)), Gravity.BOTTOM))
+        moveLayer.addView(moveStickHolder, FrameLayout.LayoutParams(-1, (moveLayer.height * .62f).roundToInt().coerceAtLeast(1), Gravity.TOP))
         val positionHandle = TextView(this@MirrorService).apply {
             text = "↕  GESER ANALOG"
             gravity = Gravity.CENTER
@@ -3907,7 +3907,10 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         moveLayer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             val lp = moveStickHolder.layoutParams as? FrameLayout.LayoutParams
             if (lp != null) {
-                lp.height = (moveLayer.height * .72f).roundToInt().coerceAtLeast(dp(180))
+                // Never let the stick holder become taller than the available deck.
+                // The old 180dp minimum could exceed short landscape panes, making
+                // available=0 and preventing the analog from reaching the bottom.
+                lp.height = (moveLayer.height * .62f).roundToInt().coerceIn(1, moveLayer.height.coerceAtLeast(1))
                 moveStickHolder.layoutParams = lp
                 placeStick()
             }
