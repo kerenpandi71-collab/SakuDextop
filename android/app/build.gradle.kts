@@ -36,9 +36,6 @@ val releaseSigningReady = listOf(
 
 android {
     namespace = "moe.n4tsu.dextop"
-    // Android's JVM unit-test classloader must see the installer/runtime
-    // payloads that LinuxSteam loads with Class.getResourceAsStream().
-    sourceSets.getByName("main").resources.srcDir("src/main/resources")
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -136,6 +133,13 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// Android's JVM unit-test tasks do not reliably put src/main/resources on the
+// test runtime classpath. LinuxSteam tests load bundled payloads via
+// Class.getResourceAsStream(), so expose the resource root explicitly to tests.
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    classpath += files("src/main/resources")
 }
 
 val generateNativeStrings by tasks.registering(Exec::class) {
