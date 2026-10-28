@@ -27,7 +27,7 @@ class DeviceMatchTest {
         assertTrue(profile.configureFreeformWindowing)
         assertEquals("1", profile.temporaryGlobalSettings["enable_freeform_support"])
         assertEquals("1", profile.temporaryGlobalSettings["force_resizable_activities"])
-        assertEquals("window_manager", profile.mirrorStrategies.first())
+        assertEquals("virtual_display", profile.mirrorStrategies.first())
     }
 
     @Test fun redmi12cGsiOverrideDoesNotMatchAnotherDeviceModelOrAndroidVersion() {
