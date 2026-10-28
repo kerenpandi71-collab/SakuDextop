@@ -64,7 +64,6 @@ internal object LaptopKeyboardLayout {
         rows += listOf(
             LaptopKey("?123", SYM, 1.45f),
             LaptopKey(",", KeyEvent.KEYCODE_COMMA, .85f),
-            LaptopKey("☺", KeyEvent.KEYCODE_UNKNOWN, .85f),
             LaptopKey("SPACE", KeyEvent.KEYCODE_SPACE, 4.5f),
             LaptopKey(".", KeyEvent.KEYCODE_PERIOD, .85f),
             LaptopKey("↵", KeyEvent.KEYCODE_ENTER, 1.35f),
