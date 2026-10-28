@@ -3518,6 +3518,11 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
             if (keyboardDeckStyle == KeyboardDeckStyle.LAPTOP &&
                 laptopFunctionRowVisible && index == 0
             ) row.tag = "laptop_function_row"
+            if (keyboardDeckStyle == KeyboardDeckStyle.LAPTOP &&
+                keys.firstOrNull()?.code == KeyEvent.KEYCODE_A
+            ) {
+                row.setPadding(dp(12), 0, dp(12), 0)
+            }
             val rowWeight = if (
                 keyboardDeckStyle == KeyboardDeckStyle.BLACKBERRY && index == 0
             ) .7f else 1f
@@ -7236,12 +7241,76 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         else -> null
     }
 
+    /** Converts the Gboard-style symbols layer into native Android key events. */
+    private fun gboardSymbolKey(keyCode: Int): Pair<Int, Boolean>? = when (keyCode) {
+        KeyEvent.KEYCODE_Q -> KeyEvent.KEYCODE_1 to false
+        KeyEvent.KEYCODE_W -> KeyEvent.KEYCODE_2 to false
+        KeyEvent.KEYCODE_E -> KeyEvent.KEYCODE_3 to false
+        KeyEvent.KEYCODE_R -> KeyEvent.KEYCODE_4 to false
+        KeyEvent.KEYCODE_T -> KeyEvent.KEYCODE_5 to false
+        KeyEvent.KEYCODE_Y -> KeyEvent.KEYCODE_6 to false
+        KeyEvent.KEYCODE_U -> KeyEvent.KEYCODE_7 to false
+        KeyEvent.KEYCODE_I -> KeyEvent.KEYCODE_8 to false
+        KeyEvent.KEYCODE_O -> KeyEvent.KEYCODE_9 to false
+        KeyEvent.KEYCODE_P -> KeyEvent.KEYCODE_0 to false
+        KeyEvent.KEYCODE_A -> KeyEvent.KEYCODE_2 to true
+        KeyEvent.KEYCODE_S -> KeyEvent.KEYCODE_3 to true
+        KeyEvent.KEYCODE_D -> KeyEvent.KEYCODE_4 to true
+        KeyEvent.KEYCODE_F -> KeyEvent.KEYCODE_5 to true
+        KeyEvent.KEYCODE_G -> KeyEvent.KEYCODE_7 to true
+        KeyEvent.KEYCODE_H -> KeyEvent.KEYCODE_MINUS to false
+        KeyEvent.KEYCODE_J -> KeyEvent.KEYCODE_EQUALS to true
+        KeyEvent.KEYCODE_K -> KeyEvent.KEYCODE_9 to true
+        KeyEvent.KEYCODE_L -> KeyEvent.KEYCODE_0 to true
+        KeyEvent.KEYCODE_Z -> KeyEvent.KEYCODE_8 to true
+        KeyEvent.KEYCODE_X -> KeyEvent.KEYCODE_APOSTROPHE to true
+        KeyEvent.KEYCODE_C -> KeyEvent.KEYCODE_APOSTROPHE to false
+        KeyEvent.KEYCODE_V -> KeyEvent.KEYCODE_SEMICOLON to true
+        KeyEvent.KEYCODE_B -> KeyEvent.KEYCODE_SEMICOLON to false
+        KeyEvent.KEYCODE_N -> KeyEvent.KEYCODE_1 to true
+        KeyEvent.KEYCODE_M -> KeyEvent.KEYCODE_SLASH to true
+        else -> null
+    }
+
+    private fun gboardSymbolLegend(keyCode: Int): String? = when (keyCode) {
+        KeyEvent.KEYCODE_Q -> "1"
+        KeyEvent.KEYCODE_W -> "2"
+        KeyEvent.KEYCODE_E -> "3"
+        KeyEvent.KEYCODE_R -> "4"
+        KeyEvent.KEYCODE_T -> "5"
+        KeyEvent.KEYCODE_Y -> "6"
+        KeyEvent.KEYCODE_U -> "7"
+        KeyEvent.KEYCODE_I -> "8"
+        KeyEvent.KEYCODE_O -> "9"
+        KeyEvent.KEYCODE_P -> "0"
+        KeyEvent.KEYCODE_A -> "@"
+        KeyEvent.KEYCODE_S -> "#"
+        KeyEvent.KEYCODE_D -> "$"
+        KeyEvent.KEYCODE_F -> "%"
+        KeyEvent.KEYCODE_G -> "&"
+        KeyEvent.KEYCODE_H -> "-"
+        KeyEvent.KEYCODE_J -> "+"
+        KeyEvent.KEYCODE_K -> "("
+        KeyEvent.KEYCODE_L -> ")"
+        KeyEvent.KEYCODE_Z -> "*"
+        KeyEvent.KEYCODE_X -> 34.toChar().toString()
+        KeyEvent.KEYCODE_C -> "'"
+        KeyEvent.KEYCODE_V -> ":"
+        KeyEvent.KEYCODE_B -> ";"
+        KeyEvent.KEYCODE_N -> "!"
+        KeyEvent.KEYCODE_M -> "?"
+        else -> null
+    }
+
     private fun startLaptopKeyPress(view: View, keyCode: Int) {
         laptopSwipeImeCoordinator.ensureExternalImeSelected()
         finishLaptopKeyPress(view)
-        val symbolKey = if (
-            keyboardDeckStyle == KeyboardDeckStyle.BLACKBERRY && laptopSymbolMode
-        ) blackBerrySymbolKey(keyCode) else null
+        val symbolKey = when {
+            !laptopSymbolMode -> null
+            keyboardDeckStyle == KeyboardDeckStyle.BLACKBERRY -> blackBerrySymbolKey(keyCode)
+            keyboardDeckStyle == KeyboardDeckStyle.LAPTOP -> gboardSymbolKey(keyCode)
+            else -> null
+        }
         val effectiveKeyCode = symbolKey?.first ?: keyCode
         var metaState = laptopMetaState(effectiveKeyCode)
         if (symbolKey?.second == true) metaState = metaState or KeyEvent.META_SHIFT_ON
@@ -7256,7 +7325,11 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
         if (LaptopKeyboardLayout.SHIFT !in heldLaptopModifiers) laptopShift = false
         if (LaptopKeyboardLayout.CONTROL !in heldLaptopModifiers) laptopControl = false
         if (LaptopKeyboardLayout.ALT !in heldLaptopModifiers) laptopAlt = false
-        if (symbolKey != null && LaptopKeyboardLayout.SYM !in heldLaptopModifiers) {
+        // BlackBerry keeps one-shot symbol behavior; the Gboard-style layer
+        // stays active until the user taps ABC.
+        if (keyboardDeckStyle == KeyboardDeckStyle.BLACKBERRY &&
+            symbolKey != null && LaptopKeyboardLayout.SYM !in heldLaptopModifiers
+        ) {
             laptopSymbolMode = false
         }
         refreshLaptopModifierKeys()
@@ -7358,7 +7431,12 @@ class MirrorService : AccessibilityService(), SurfaceHolder.Callback {
 
     private fun refreshLaptopKeyLegends() {
         laptopLegendButtons.forEach { (button, base) ->
+            val keyCode = button.tag as? Int
             val symbol = when {
+                keyboardDeckStyle == KeyboardDeckStyle.LAPTOP && laptopSymbolMode &&
+                        keyCode == LaptopKeyboardLayout.SYM -> "ABC"
+                keyboardDeckStyle == KeyboardDeckStyle.LAPTOP && laptopSymbolMode &&
+                        keyCode != null -> gboardSymbolLegend(keyCode) ?: base
                 (laptopShiftLocked || laptopCapsLock) &&
                         base.length == 1 && base[0].isLetter() ->
                     base.uppercase(Locale.ENGLISH)
