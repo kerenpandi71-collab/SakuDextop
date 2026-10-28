@@ -20,6 +20,13 @@ internal object LaptopKeyboardLayout {
     const val SPACER = -8
     const val SYM = -9
 
+    /**
+     * Compact Gboard-inspired touch layout for Laptop Mode.
+     *
+     * Keeps Android key codes for reliable desktop input, but uses phone-style
+     * staggered QWERTY rows and a dedicated bottom action row instead of a
+     * physical PC keyboard layout.
+     */
     fun laptopRows(showFunctionRow: Boolean): List<List<LaptopKey>> {
         val rows = mutableListOf<List<LaptopKey>>()
         if (showFunctionRow) rows += listOf(
@@ -33,55 +40,34 @@ internal object LaptopKeyboardLayout {
             LaptopKey("DEL", KeyEvent.KEYCODE_FORWARD_DEL, 1.15f),
         )
         rows += listOf(
-            listOf(
-                LaptopKey("`", KeyEvent.KEYCODE_GRAVE),
-                LaptopKey("1", KeyEvent.KEYCODE_1), LaptopKey("2", KeyEvent.KEYCODE_2),
-                LaptopKey("3", KeyEvent.KEYCODE_3), LaptopKey("4", KeyEvent.KEYCODE_4),
-                LaptopKey("5", KeyEvent.KEYCODE_5), LaptopKey("6", KeyEvent.KEYCODE_6),
-                LaptopKey("7", KeyEvent.KEYCODE_7), LaptopKey("8", KeyEvent.KEYCODE_8),
-                LaptopKey("9", KeyEvent.KEYCODE_9), LaptopKey("0", KeyEvent.KEYCODE_0),
-                LaptopKey("-", KeyEvent.KEYCODE_MINUS), LaptopKey("=", KeyEvent.KEYCODE_EQUALS),
-                LaptopKey("⌫", KeyEvent.KEYCODE_DEL, 1.55f),
-            ),
-            listOf(
-                LaptopKey("TAB", KeyEvent.KEYCODE_TAB, 1.35f),
-                LaptopKey("Q", KeyEvent.KEYCODE_Q), LaptopKey("W", KeyEvent.KEYCODE_W),
-                LaptopKey("E", KeyEvent.KEYCODE_E), LaptopKey("R", KeyEvent.KEYCODE_R),
-                LaptopKey("T", KeyEvent.KEYCODE_T), LaptopKey("Y", KeyEvent.KEYCODE_Y),
-                LaptopKey("U", KeyEvent.KEYCODE_U), LaptopKey("I", KeyEvent.KEYCODE_I),
-                LaptopKey("O", KeyEvent.KEYCODE_O), LaptopKey("P", KeyEvent.KEYCODE_P),
-                LaptopKey("[", KeyEvent.KEYCODE_LEFT_BRACKET),
-                LaptopKey("]", KeyEvent.KEYCODE_RIGHT_BRACKET),
-                LaptopKey("\\", KeyEvent.KEYCODE_BACKSLASH, 1.35f),
-            ),
-            listOf(
-                LaptopKey("CAPS", CAPS, 1.65f),
-                LaptopKey("A", KeyEvent.KEYCODE_A), LaptopKey("S", KeyEvent.KEYCODE_S),
-                LaptopKey("D", KeyEvent.KEYCODE_D), LaptopKey("F", KeyEvent.KEYCODE_F),
-                LaptopKey("G", KeyEvent.KEYCODE_G), LaptopKey("H", KeyEvent.KEYCODE_H),
-                LaptopKey("J", KeyEvent.KEYCODE_J), LaptopKey("K", KeyEvent.KEYCODE_K),
-                LaptopKey("L", KeyEvent.KEYCODE_L), LaptopKey(";", KeyEvent.KEYCODE_SEMICOLON),
-                LaptopKey("'", KeyEvent.KEYCODE_APOSTROPHE),
-                LaptopKey("ENTER", KeyEvent.KEYCODE_ENTER, 1.75f),
-            ),
-            listOf(
-                LaptopKey("SHIFT", SHIFT, 2.15f),
-                LaptopKey("Z", KeyEvent.KEYCODE_Z), LaptopKey("X", KeyEvent.KEYCODE_X),
-                LaptopKey("C", KeyEvent.KEYCODE_C), LaptopKey("V", KeyEvent.KEYCODE_V),
-                LaptopKey("B", KeyEvent.KEYCODE_B), LaptopKey("N", KeyEvent.KEYCODE_N),
-                LaptopKey("M", KeyEvent.KEYCODE_M), LaptopKey(",", KeyEvent.KEYCODE_COMMA),
-                LaptopKey(".", KeyEvent.KEYCODE_PERIOD), LaptopKey("/", KeyEvent.KEYCODE_SLASH),
-                LaptopKey("SHIFT", SHIFT, 2.15f),
-            ),
-            listOf(
-                LaptopKey("CTRL", CONTROL, 1.25f),
-                LaptopKey("", KeyEvent.KEYCODE_META_LEFT),
-                LaptopKey("ALT", ALT, 1.15f),
-                LaptopKey("SPACE", KeyEvent.KEYCODE_SPACE, 5f),
-                LaptopKey("ALT", ALT, 1.15f),
-                LaptopKey("←", KeyEvent.KEYCODE_DPAD_LEFT), LaptopKey("↑", KeyEvent.KEYCODE_DPAD_UP),
-                LaptopKey("↓", KeyEvent.KEYCODE_DPAD_DOWN), LaptopKey("→", KeyEvent.KEYCODE_DPAD_RIGHT),
-            ),
+            LaptopKey("Q", KeyEvent.KEYCODE_Q), LaptopKey("W", KeyEvent.KEYCODE_W),
+            LaptopKey("E", KeyEvent.KEYCODE_E), LaptopKey("R", KeyEvent.KEYCODE_R),
+            LaptopKey("T", KeyEvent.KEYCODE_T), LaptopKey("Y", KeyEvent.KEYCODE_Y),
+            LaptopKey("U", KeyEvent.KEYCODE_U), LaptopKey("I", KeyEvent.KEYCODE_I),
+            LaptopKey("O", KeyEvent.KEYCODE_O), LaptopKey("P", KeyEvent.KEYCODE_P),
+        )
+        rows += listOf(
+            LaptopKey("A", KeyEvent.KEYCODE_A), LaptopKey("S", KeyEvent.KEYCODE_S),
+            LaptopKey("D", KeyEvent.KEYCODE_D), LaptopKey("F", KeyEvent.KEYCODE_F),
+            LaptopKey("G", KeyEvent.KEYCODE_G), LaptopKey("H", KeyEvent.KEYCODE_H),
+            LaptopKey("J", KeyEvent.KEYCODE_J), LaptopKey("K", KeyEvent.KEYCODE_K),
+            LaptopKey("L", KeyEvent.KEYCODE_L),
+        )
+        rows += listOf(
+            LaptopKey("⇧", SHIFT, 1.35f),
+            LaptopKey("Z", KeyEvent.KEYCODE_Z), LaptopKey("X", KeyEvent.KEYCODE_X),
+            LaptopKey("C", KeyEvent.KEYCODE_C), LaptopKey("V", KeyEvent.KEYCODE_V),
+            LaptopKey("B", KeyEvent.KEYCODE_B), LaptopKey("N", KeyEvent.KEYCODE_N),
+            LaptopKey("M", KeyEvent.KEYCODE_M),
+            LaptopKey("⌫", KeyEvent.KEYCODE_DEL, 1.35f),
+        )
+        rows += listOf(
+            LaptopKey("?123", SYM, 1.45f),
+            LaptopKey(",", KeyEvent.KEYCODE_COMMA, .85f),
+            LaptopKey("☺", KeyEvent.KEYCODE_UNKNOWN, .85f),
+            LaptopKey("SPACE", KeyEvent.KEYCODE_SPACE, 4.5f),
+            LaptopKey(".", KeyEvent.KEYCODE_PERIOD, .85f),
+            LaptopKey("↵", KeyEvent.KEYCODE_ENTER, 1.35f),
         )
         return rows
     }
