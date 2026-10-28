@@ -49,6 +49,22 @@ internal object DeviceProfiles {
                     directPlasmaDisplay = identity.sdk <= 35,
                 )
         },
+        // Redmi 12C (earth) on Android 15 GSI is not the stock HyperOS/MIUI
+        // environment this broad vendor rule is intended to work around. Keep this
+        // exception narrow and ahead of the manufacturer-wide Xiaomi rule so the
+        // device can be tested with the generic Android freeform implementation.
+        DesktopEnvironmentRule(
+            "redmi12c_android15_gsi",
+            DeviceMatch(
+                models = setOf("22120RN86C"),
+                devices = setOf("earth"),
+                minSdk = 35,
+                maxSdk = 35
+            )
+        ) { identity ->
+            DesktopEnvironmentRegistry.aospFreeform(identity)
+                .copy(id = "redmi12c_android15_gsi")
+        },
         // HyperOS starts SecondaryDisplayLauncher on the recording display, gives
         // overlay-display windows the phone's portrait bounds, and reports the
         // phone's size and density as overrides on new virtual displays (even
