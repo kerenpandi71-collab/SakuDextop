@@ -10,6 +10,36 @@ class DeviceMatchTest {
         "Xiaomi", "Xiaomi", "24030PN60G", "aurora", "aurora_global", "Xiaomi/aurora_global/aurora:16/build", 36,
     )
 
+    @Test fun redmi12cAndroid15GsiUsesAospProfileBeforeTheBroadXiaomiRule() {
+        val redmi = DeviceIdentity(
+            "Xiaomi", "Redmi", "22120RN86C", "earth", "earth",
+            "Redmi/earth/earth:12/SP1A.210812.016/V13.0.2.0.SCVCNXM:user/release-keys", 35
+        )
+        val profile = DesktopEnvironmentRegistry.resolve(redmi)
+
+        assertEquals("redmi12c_android15_gsi", profile.id)
+        assertFalse(profile.directPlasmaDisplay)
+        assertFalse(profile.untrustedMirrorDisplay)
+        assertFalse(profile.fullscreenApplicationDisplays)
+        assertFalse(profile.privateApplicationDisplays)
+        assertFalse(profile.passivePlasmaShellFocus)
+        assertEquals("system", profile.defaultWindowManager)
+        assertTrue(profile.configureFreeformWindowing)
+        assertEquals("1", profile.temporaryGlobalSettings["enable_freeform_support"])
+        assertEquals("1", profile.temporaryGlobalSettings["force_resizable_activities"])
+        assertEquals("window_manager", profile.mirrorStrategies.first())
+    }
+
+    @Test fun redmi12cGsiOverrideDoesNotMatchAnotherDeviceModelOrAndroidVersion() {
+        val redmi = DeviceIdentity(
+            "Xiaomi", "Redmi", "22120RN86C", "earth", "earth",
+            "Redmi/earth/earth:12/SP1A.210812.016/V13.0.2.0.SCVCNXM:user/release-keys", 35
+        )
+        assertEquals("xiaomi_hyperos", DesktopEnvironmentRegistry.resolve(redmi.copy(model = "other")).id)
+        assertEquals("xiaomi_hyperos", DesktopEnvironmentRegistry.resolve(redmi.copy(device = "other")).id)
+        assertEquals("xiaomi_hyperos", DesktopEnvironmentRegistry.resolve(redmi.copy(sdk = 34)).id)
+    }
+
     @Test fun everyXiaomiDeviceUsesTheHyperosProfileAndStartsOnTheDextopWindowManager() {
         for (identity in listOf(
             xiaomiAurora,
