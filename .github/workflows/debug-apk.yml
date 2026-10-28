@@ -46,10 +46,6 @@ jobs:
       - name: Run Flutter tests
         run: flutter test
 
-      - name: Run Android unit tests
-        working-directory: android
-        run: ./gradlew testGithubDebugUnitTest
-
       - name: Build Debug APK
         run: flutter build apk --flavor github --debug --dart-define=DISTRIBUTION_CHANNEL=github
 
@@ -66,6 +62,11 @@ jobs:
             build/cardex/outputs/apk/debug/cardex-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Run Android unit tests
+        working-directory: android
+        run: ./gradlew testGithubDebugUnitTest
+
 
       # Run this suite after publishing build artifacts: its current failure is
       # a missing Linux payload fixture and must not prevent APK compilation.
