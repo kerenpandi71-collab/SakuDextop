@@ -200,3 +200,8 @@ tasks.configureEach {
 }
 
 // Linux shortcut APK generation is excluded from the Android-only build.
+
+// Make bundled Linux runtime payloads visible to Android JVM unit tests.
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    classpath += files("src/main/resources")
+}
