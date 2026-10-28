@@ -36,6 +36,9 @@ val releaseSigningReady = listOf(
 
 android {
     namespace = "moe.n4tsu.dextop"
+    // Android's JVM unit-test classloader must see the installer/runtime
+    // payloads that LinuxSteam loads with Class.getResourceAsStream().
+    sourceSets.getByName("main").resources.srcDir("src/main/resources")
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
