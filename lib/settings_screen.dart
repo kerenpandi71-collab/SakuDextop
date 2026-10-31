@@ -503,35 +503,19 @@ extension _SettingsContent on _HomeScreenState {
                   ? null
                   : () => _selectMirrorBackend(context, l, updateRoute),
             ),
-            ...[
-              Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.space_dashboard_outlined),
-                title: Text(l.windowManager),
-                subtitle: Text(_windowManagerLabel(l, windowManager)),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => _selectWindowManager(context, l, updateRoute),
-              ),
-            ],
             Divider(height: 1),
-              trailing: Icon(Icons.chevron_right_rounded),
-              onTap: () => _selectCastMode(context, updateRoute),
-            ),
-            DisplayEnvironmentSettingsCard(
-              bridge: bridge,
-              showDisplay: false,
-              showConvenience: false,
-              displayLeadingDivider: true,
-              wrapInCard: false,
+            ListTile(
+              leading: const Icon(Icons.space_dashboard_outlined),
+              title: Text(l.windowManagerSystem),
+              subtitle: Text(l.windowManagerSystemDescription),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () async {
+                updateRoute(() => windowManager = 'system');
+                await setWindowManager('system');
+              },
             ),
           ]),
           _displaySettingsSection(currentLocalizations().uiConvenience, [
-            DisplayEnvironmentSettingsCard(
-              bridge: bridge,
-              showDisplay: false,
-              wrapInCard: false,
-            ),
-            Divider(height: 1),
             SwitchListTile(
               title: Text(l.secureDisplay),
               subtitle: Text(l.secureDisplayDescription),
@@ -553,101 +537,6 @@ extension _SettingsContent on _HomeScreenState {
           ]),
         ],
       );
-
-  String _windowManagerLabel(AppLocalizations l, String value) =>
-      switch (value) {
-        'dextop_plasma' => l.windowManagerPlasma,
-        'dextop_plasma_v2' => l.windowManagerPlasmaV2,
-        _ => l.windowManagerSystem,
-      };
-
-  Future<void> _selectWindowManager(
-    BuildContext routeContext,
-    AppLocalizations l,
-    StateSetter updateRoute,
-  ) async {
-    final selected = await showDialog<String>(
-      context: routeContext,
-      builder: (dialogContext) => SimpleDialog(
-        title: Text(l.windowManager),
-        children: [
-          RadioGroup<String>(
-            groupValue: windowManager,
-            onChanged: (choice) => Navigator.pop(dialogContext, choice),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RadioListTile<String>(
-                  value: 'system',
-                  title: Text(l.windowManagerSystem),
-                  subtitle: Text(l.windowManagerSystemDescription),
-                ),
-                RadioListTile<String>(
-                  value: 'dextop_plasma_v2',
-                  title: Text(l.windowManagerPlasmaV2),
-                  subtitle: Text(l.windowManagerPlasmaV2Description),
-                ),
-                if (experimentalWindowManagerEnabled)
-                  RadioListTile<String>(
-                    value: 'dextop_plasma',
-                    title: Text(l.windowManagerPlasma),
-                    subtitle: Text(l.windowManagerPlasmaDescription),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-    if (selected == null || selected == windowManager) return;
-    updateRoute(() => windowManager = selected);
-    await setWindowManager(selected);
-    if (active && routeContext.mounted) {
-      ScaffoldMessenger.of(
-        routeContext,
-      ).showSnackBar(SnackBar(content: Text(l.windowManagerAppliedLive)));
-    }
-  }
-
-  Future<void> _selectCastMode(
-    BuildContext routeContext,
-    StateSetter updateRoute,
-  ) async {
-    final selected = await showDialog<String>(
-      context: routeContext,
-      builder: (dialogContext) => SimpleDialog(
-        title: Text(currentLocalizations().castMode),
-        children: [
-          RadioGroup<String>(
-            groupValue: castMode,
-            onChanged: (choice) => Navigator.pop(dialogContext, choice),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RadioListTile<String>(
-                  value: 'simple',
-                  title: Text(currentLocalizations().castModeSimple),
-                  subtitle: Text(
-                    currentLocalizations().castModeSimpleDescription,
-                  ),
-                ),
-                RadioListTile<String>(
-                  value: 'receiver',
-                  title: Text(currentLocalizations().castModeReceiver),
-                  subtitle: Text(
-                    currentLocalizations().castModeReceiverDescription,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-    if (selected == null || selected == castMode) return;
-    updateRoute(() => castMode = selected);
-    await setCastMode(selected);
-  }
 
   Widget _displaySettingsSection(String title, List<Widget> children) =>
       Padding(
