@@ -2,7 +2,7 @@ name: Debug APK
 
 on:
   push:
-    branches: [main, feature/landscape-gamepad-split-screen]
+    branches: [main, feature/landscape-gamepad-split-screen, feature/sakudextop-lite-virtual-touchpad]
   pull_request:
   workflow_dispatch:
 
