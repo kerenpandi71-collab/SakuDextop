@@ -195,9 +195,9 @@ class LiteMainActivity : Activity() {
                     check(result.succeeded) { result.output.ifBlank { "Gagal meminta virtual display." } }
                 }
                 var found: Display? = null
-                repeat(60) {
+                for (attempt in 0 until 60) {
                     found = findOverlayDisplay(before)
-                    if (found != null) return@repeat
+                    if (found != null) break
                     Thread.sleep(100L)
                 }
                 val target = found ?: error("Virtual display tidak muncul. Periksa dukungan overlay display pada ROM.")
@@ -240,8 +240,8 @@ class LiteMainActivity : Activity() {
                     LitePrivilege.execute("settings", "put", "global", OVERLAY_SETTING, entries.joinToString(";"))
                 }
                 check(result.succeeded) { result.output.ifBlank { "Gagal menghapus spesifikasi display." } }
-                repeat(40) {
-                    if (displayManager.getDisplay(activeDisplayId) == null) return@repeat
+                for (attempt in 0 until 40) {
+                    if (displayManager.getDisplay(activeDisplayId) == null) break
                     Thread.sleep(100L)
                 }
             }.onSuccess {
@@ -341,11 +341,11 @@ class LiteMainActivity : Activity() {
     }
 
     private fun findOverlayDisplay(previousIds: Set<Int>): Display? {
-        return displayManager.displays.firstOrNull {
-            it.displayId !in previousIds && it.displayId != Display.DEFAULT_DISPLAY && isOverlay(it)
-        } ?: displayManager.displays.firstOrNull {
+        val displays = displayManager.displays.filter {
             it.displayId != Display.DEFAULT_DISPLAY && isOverlay(it)
         }
+        return displays.firstOrNull { it.displayId !in previousIds }
+            ?: displays.maxByOrNull { it.displayId }
     }
 
     private fun isOverlay(display: Display): Boolean {
@@ -390,17 +390,13 @@ class LiteMainActivity : Activity() {
     }
 
     private fun updatePrivilegeStatus() {
-        val root = LitePrivilege.execute("id")
-        val rootReady = root.succeeded && root.output.contains("uid=0")
         val shizukuReady = LitePrivilege.hasShizukuPermission()
         privilegeStatus.text = when {
-            shizukuReady && rootReady -> "Akses siap • Root + Shizuku diizinkan"
-            shizukuReady -> "Akses siap • Shizuku diizinkan"
-            rootReady -> "Root siap • Izinkan Shizuku untuk touchpad lintas display"
+            shizukuReady -> "Shizuku siap • Injeksi touchpad lintas display diizinkan"
             LitePrivilege.shizukuConnected() -> "Shizuku aktif • Izin aplikasi belum diberikan"
-            else -> "Akses belum siap • Root atau Shizuku diperlukan"
+            else -> "Root bisa membuat display • Shizuku diperlukan untuk touchpad"
         }
-        privilegeStatus.setTextColor(if (rootReady || shizukuReady) 0xFF8ED6A5.toInt() else 0xFFFFC078.toInt())
+        privilegeStatus.setTextColor(if (shizukuReady) 0xFF8ED6A5.toInt() else 0xFFFFC078.toInt())
     }
 
     private fun setStatus(message: String) {
