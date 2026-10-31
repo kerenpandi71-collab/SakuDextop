@@ -72,7 +72,7 @@ class _DextopAppState extends State<DextopApp> {
       themeMode: themeMode,
       theme: appTheme(Brightness.light),
       darkTheme: appTheme(Brightness.dark),
-      builder: (context, child) => LinuxExpressive(child: child!),
+      builder: (context, child) => child!,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -342,10 +342,6 @@ class NativeBridge {
 
   /// Applies the saved `window_manager` preference to a running session.
   Future<void> setWindowManager() => channel.invokeMethod('setWindowManager');
-
-  /// Re-reads Dextop Plasma appearance preferences on the running desktop.
-  Future<void> plasmaSettingsChanged() =>
-      channel.invokeMethod('plasmaSettingsChanged');
 
   Future<Map<String, dynamic>> setVirtualPointerProfile(String profile) async =>
       await channel.invokeMapMethod<String, dynamic>(
