@@ -78,7 +78,6 @@ class _DextopAppState extends State<DextopApp> {
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
-        linuxMaterialUiLocalizations,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
       home: setupCompleted == null || desktopWindow == null
