@@ -155,7 +155,7 @@ internal class MobaGamepadView(
         when (region) {
             Region.ANALOG -> {
                 if (touchMapper.press(token(id), layout.joystickCenter.x, layout.joystickCenter.y)) {
-                    updateAnalog(touch, x, y, token(id))
+                    if (!updateAnalog(touch, x, y, token(id))) cancelAll()
                 } else {
                     active.remove(id)
                 }
@@ -179,13 +179,13 @@ internal class MobaGamepadView(
         touch.lastX = x
         touch.lastY = y
         when (touch.region) {
-            Region.ANALOG -> updateAnalog(touch, x, y, token(id))
-            Region.SKILL_2 -> updateSkillAim(touch, x, y, token(id))
+            Region.ANALOG -> if (!updateAnalog(touch, x, y, token(id))) cancelAll()
+            Region.SKILL_2 -> if (!updateSkillAim(touch, x, y, token(id))) cancelAll()
             else -> Unit
         }
     }
 
-    private fun updateAnalog(touch: ActiveTouch, x: Float, y: Float, token: Int) {
+    private fun updateAnalog(touch: ActiveTouch, x: Float, y: Float, token: Int): Boolean {
         val dx = x - touch.downX
         val dy = y - touch.downY
         val length = hypot(dx.toDouble(), dy.toDouble()).toFloat()
@@ -194,14 +194,12 @@ internal class MobaGamepadView(
         val ny = (dy * scale / analogRadius).coerceIn(-1f, 1f)
         val targetX = (layout.joystickCenter.x + nx * layout.joystickRadius).coerceIn(0f, targetWidth - 1f)
         val targetY = (layout.joystickCenter.y + ny * layout.joystickRadius).coerceIn(0f, targetHeight - 1f)
-        if (!touchMapper.move(token, targetX, targetY)) {
-            active.entries.firstOrNull { it.value === touch }?.key?.let(active::remove)
-            onAnalogChanged(0f, 0f)
-        }
+        if (!touchMapper.move(token, targetX, targetY)) return false
         onAnalogChanged(nx, ny)
+        return true
     }
 
-    private fun updateSkillAim(touch: ActiveTouch, x: Float, y: Float, token: Int) {
+    private fun updateSkillAim(touch: ActiveTouch, x: Float, y: Float, token: Int): Boolean {
         val origin = touch.downX to touch.downY
         var dx = x - origin.first
         var dy = y - origin.second
@@ -211,7 +209,7 @@ internal class MobaGamepadView(
         dy *= scale
         val targetX = (layout.skill2.x + dx / aimRadius * layout.skillAimRadius).coerceIn(0f, targetWidth - 1f)
         val targetY = (layout.skill2.y + dy / aimRadius * layout.skillAimRadius).coerceIn(0f, targetHeight - 1f)
-        touchMapper.move(token, targetX, targetY)
+        return touchMapper.move(token, targetX, targetY)
     }
 
     private fun endPointer(id: Int) {
