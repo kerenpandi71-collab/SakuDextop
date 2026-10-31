@@ -465,20 +465,6 @@ extension _SettingsContent on _HomeScreenState {
     );
   }
 
-  void _openDisplaySettings(AppLocalizations l) {
-    AppAnalytics.screen('display_settings');
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => StatefulBuilder(
-          builder: (routeContext, updateRoute) => Scaffold(
-            appBar: AppBar(title: Text(l.display)),
-            body: _displaySettingsContent(l, updateRoute),
-          ),
-        ),
-      ),
-    );
-  }
-
   void _openMouseSettings(AppLocalizations l) {
     AppAnalytics.screen('mouse_settings');
     Navigator.of(context).push(
