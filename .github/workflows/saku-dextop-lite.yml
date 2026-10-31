@@ -1,0 +1,66 @@
+name: Build SakuDextop Lite
+
+on:
+  push:
+    branches:
+      - feature/sakudextop-lite-virtual-touchpad
+    paths:
+      - "lite/**"
+      - ".github/workflows/saku-dextop-lite.yml"
+  pull_request:
+    paths:
+      - "lite/**"
+      - ".github/workflows/saku-dextop-lite.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-lite:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build tools
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Build minified Lite APK
+        run: gradle --no-daemon -p lite :app:assembleRelease
+
+      - name: Report APK size
+        id: apk
+        run: |
+          APK="lite/app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          BYTES="$(stat -c%s "$APK")"
+          MIB="$(awk -v bytes="$BYTES" 'BEGIN { printf "%.2f", bytes / 1048576 }')"
+          echo "APK_SIZE_BYTES=$BYTES" >> "$GITHUB_OUTPUT"
+          echo "APK_SIZE_MIB=$MIB" >> "$GITHUB_OUTPUT"
+          echo "SakuDextop Lite APK: $MIB MiB ($BYTES bytes)"
+          if [ "$BYTES" -gt 20971520 ]; then
+            echo "::warning::APK exceeds the 20 MiB target. Inspect packaged libraries and resources."
+          fi
+
+      - name: Upload Lite APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: saku-dextop-lite-release
+          path: lite/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
