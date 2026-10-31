@@ -263,17 +263,7 @@ class _ExperimentalFeaturesPage extends StatelessWidget {
     body: ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        DisplayEnvironmentSettingsCard(bridge: bridge, showConvenience: false),
-        const SizedBox(height: 12),
-        _ExperimentalWindowManagerTile(
-          bridge: bridge,
-          isRunning: isRunning,
-          onChanged: onChanged,
-        ),
-        const SizedBox(height: 12),
         _GamepadExperimentalTile(isRunning: isRunning),
-        const SizedBox(height: 12),
-        _ForceLaptopModeExperimentalTile(isRunning: isRunning),
         const SizedBox(height: 12),
         _SamsungExperimentalSettingsTile(
           bridge: bridge,
