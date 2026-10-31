@@ -20,13 +20,6 @@ extension _SettingsContent on _HomeScreenState {
               rootMyGalaxyThemeSwitch(l),
               SizedBox(height: 32),
               settingsCard([
-                _categoryTile(
-                  Icons.display_settings_outlined,
-                  l.display,
-                  currentLocalizations().uiSecureDisplayFoldable,
-                  () => _openDisplaySettings(l),
-                ),
-                Divider(height: 1),
                 if (carCompanionInstalled) ...[
                   _categoryTile(
                     Icons.directions_car_outlined,
@@ -501,18 +494,6 @@ extension _SettingsContent on _HomeScreenState {
         children: [
           _displaySettingsSection(currentLocalizations().uiDisplayCategory, [
             ListTile(
-              leading: const Icon(Icons.desktop_windows_outlined),
-              title: Text(currentLocalizations().displaySettingsTitle),
-              subtitle: Text(currentLocalizations().displaySettingsSummary),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => DisplaySettingsPage(bridge: bridge),
-                ),
-              ),
-            ),
-            Divider(height: 1),
-            ListTile(
               enabled: !active,
               leading: Icon(Icons.account_tree_outlined),
               title: Text(l.mirrorBackend),
@@ -533,14 +514,6 @@ extension _SettingsContent on _HomeScreenState {
               ),
             ],
             Divider(height: 1),
-            ListTile(
-              leading: Icon(Icons.cast_rounded),
-              title: Text(currentLocalizations().castMode),
-              subtitle: Text(
-                castMode == 'receiver'
-                    ? currentLocalizations().castModeReceiver
-                    : currentLocalizations().castModeSimple,
-              ),
               trailing: Icon(Icons.chevron_right_rounded),
               onTap: () => _selectCastMode(context, updateRoute),
             ),
@@ -552,11 +525,6 @@ extension _SettingsContent on _HomeScreenState {
               wrapInCard: false,
             ),
           ]),
-          DextopFeaturesPage(
-            isRunning: active,
-            embedded: true,
-            category: 'display',
-          ),
           _displaySettingsSection(currentLocalizations().uiConvenience, [
             DisplayEnvironmentSettingsCard(
               bridge: bridge,
