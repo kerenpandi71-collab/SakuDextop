@@ -158,10 +158,17 @@ class LiteMainActivity : Activity() {
 
         val shizukuButton = button("SAMBUNGKAN / IZINKAN SHIZUKU")
         shizukuButton.setOnClickListener {
-            runCatching {
-                LitePrivilege.requestShizukuPermission(this, SHIZUKU_REQUEST_CODE)
-            }.onFailure { showMessage(it.message ?: "Shizuku belum siap") }
-            updatePrivilegeStatus()
+            shizukuButton.isEnabled = false
+            worker.execute {
+                val error = runCatching {
+                    LitePrivilege.requestShizukuPermission(this, SHIZUKU_REQUEST_CODE)
+                }.exceptionOrNull()
+                runOnUiThread {
+                    shizukuButton.isEnabled = true
+                    error?.let { showMessage(it.message ?: "Shizuku belum siap") }
+                    updatePrivilegeStatus()
+                }
+            }
         }
         page.addView(shizukuButton, buttonParams(dp(12)))
         page.addView(label(
@@ -428,13 +435,24 @@ class LiteMainActivity : Activity() {
     }
 
     private fun updatePrivilegeStatus() {
-        val shizukuReady = LitePrivilege.hasShizukuPermission()
-        privilegeStatus.text = when {
-            shizukuReady -> "Shizuku siap • Injeksi touchpad lintas display diizinkan"
-            LitePrivilege.shizukuConnected() -> "Shizuku aktif • Izin aplikasi belum diberikan"
-            else -> "Root bisa membuat display • Shizuku diperlukan untuk touchpad"
+        // Binder checks may block if Shizuku is starting or unavailable.
+        // Never perform them on the main/UI thread.
+        privilegeStatus.text = "Memeriksa koneksi Shizuku…"
+        worker.execute {
+            val shizukuReady = LitePrivilege.hasShizukuPermission()
+            val connected = !shizukuReady && LitePrivilege.shizukuConnected()
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                privilegeStatus.text = when {
+                    shizukuReady -> "Shizuku siap • Injeksi touchpad lintas display diizinkan"
+                    connected -> "Shizuku aktif • Izin aplikasi belum diberikan"
+                    else -> "Root bisa membuat display • Shizuku diperlukan untuk touchpad"
+                }
+                privilegeStatus.setTextColor(
+                    if (shizukuReady) 0xFF8ED6A5.toInt() else 0xFFFFC078.toInt()
+                )
+            }
         }
-        privilegeStatus.setTextColor(if (shizukuReady) 0xFF8ED6A5.toInt() else 0xFFFFC078.toInt())
     }
 
     private fun setStatus(message: String) {
