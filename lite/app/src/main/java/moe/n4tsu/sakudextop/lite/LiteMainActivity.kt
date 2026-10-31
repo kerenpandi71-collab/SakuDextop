@@ -191,7 +191,12 @@ class LiteMainActivity : Activity() {
                 val before = displayManager.displays.mapTo(mutableSetOf()) { it.displayId }
                 val current = readOverlaySetting()
                 val entries = current.split(';').map { it.trim() }.filter { it.isNotEmpty() }
-                val savedOwnership = preferences.getString(KEY_SPEC, null) == spec &&
+                val sameSavedSpec = preferences.getString(KEY_SPEC, null) == spec
+                val savedDisplay = if (sameSavedSpec) {
+                    displayManager.getDisplay(preferences.getInt(KEY_DISPLAY_ID, Display.INVALID_DISPLAY))
+                        ?.takeIf(::isOverlay)
+                } else null
+                val savedOwnership = sameSavedSpec &&
                     preferences.getBoolean(KEY_OWNS_SPEC, false)
                 addedByLite = spec !in entries
                 if (addedByLite) {
@@ -207,7 +212,10 @@ class LiteMainActivity : Activity() {
                     if (found != null) break
                     Thread.sleep(100L)
                 }
-                val target = found ?: error("Virtual display tidak muncul. Periksa dukungan overlay display pada ROM.")
+                val target = found ?: savedDisplay
+                    ?: error(
+                        "Virtual display baru tidak terdeteksi. Display dengan ukuran ini mungkin sudah dimiliki aplikasi lain; pilih ukuran/DPI berbeda."
+                    )
                 preferences.edit()
                     .putInt(KEY_DISPLAY_ID, target.displayId)
                     .putString(KEY_SPEC, spec)
@@ -371,13 +379,12 @@ class LiteMainActivity : Activity() {
         return result.output.trim().takeUnless { it == "null" } ?: ""
     }
 
-    private fun findOverlayDisplay(previousIds: Set<Int>): Display? {
-        val displays = displayManager.displays.filter {
-            it.displayId != Display.DEFAULT_DISPLAY && isOverlay(it)
+    private fun findOverlayDisplay(previousIds: Set<Int>): Display? =
+        displayManager.displays.firstOrNull {
+            it.displayId != Display.DEFAULT_DISPLAY &&
+                it.displayId !in previousIds &&
+                isOverlay(it)
         }
-        return displays.firstOrNull { it.displayId !in previousIds }
-            ?: displays.maxByOrNull { it.displayId }
-    }
 
     private fun isOverlay(display: Display): Boolean {
         val type = runCatching {
