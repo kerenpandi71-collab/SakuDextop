@@ -73,20 +73,28 @@ internal class MobaGamepadView(
         isFocusable = true
     }
 
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        val w = width.toFloat()
-        val h = height.toFloat()
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        updateGeometry(w.toFloat(), h.toFloat())
+    }
+
+    private fun updateGeometry(w: Float = width.toFloat(), h: Float = height.toFloat()) {
+        if (w <= 0f || h <= 0f) return
         analogRadius = minOf(w, h) * .13f
         skillRadius = minOf(w, h) * .085f
         aimRadius = minOf(w, h) * .22f
         analogCenter = PointF(w * .18f, h * .72f)
 
-        // Four skill controls sit on the right; skill 2 is the directional drag control.
+        // Keep hit targets synchronized with their drawn controls after rotation/resizing.
         skillCenters[Region.SKILL_1] = PointF(w * .72f, h * .72f)
         skillCenters[Region.SKILL_2] = PointF(w * .84f, h * .52f)
         skillCenters[Region.SKILL_3] = PointF(w * .72f, h * .32f)
         skillCenters[Region.SPELL] = PointF(w * .92f, h * .82f)
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        updateGeometry()
 
         drawPad(canvas, analogCenter, analogRadius, "MOVE", active.values.any { it.region == Region.ANALOG })
         drawSkill(canvas, Region.SKILL_1, "1")
@@ -122,6 +130,9 @@ internal class MobaGamepadView(
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        // A touch can arrive immediately after the overlay is attached, before
+        // its first frame has been drawn. Initialize hit geometry synchronously.
+        updateGeometry()
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN ->
                 beginPointer(event.getPointerId(event.actionIndex), event.getX(event.actionIndex), event.getY(event.actionIndex))
