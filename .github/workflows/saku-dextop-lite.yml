@@ -16,6 +16,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: saku-dextop-lite-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-lite:
     runs-on: ubuntu-latest
