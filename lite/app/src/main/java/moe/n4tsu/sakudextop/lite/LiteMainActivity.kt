@@ -39,6 +39,7 @@ class LiteMainActivity : Activity() {
 
     @Volatile private var activeDisplayId = Display.INVALID_DISPLAY
     @Volatile private var activeSpec: String? = null
+    @Volatile private var ownsSpec = false
     @Volatile private var displayWidth = 820
     @Volatile private var displayHeight = 1320
     @Volatile private var cursorX = 410f
@@ -185,14 +186,20 @@ class LiteMainActivity : Activity() {
         button.isEnabled = false
         setStatus("Membuat virtual display ${spec}…")
         worker.execute {
+            var addedByLite = false
             runCatching {
                 val before = displayManager.displays.mapTo(mutableSetOf()) { it.displayId }
                 val current = readOverlaySetting()
                 val entries = current.split(';').map { it.trim() }.filter { it.isNotEmpty() }
-                if (spec !in entries) {
+                val savedOwnership = preferences.getString(KEY_SPEC, null) == spec &&
+                    preferences.getBoolean(KEY_OWNS_SPEC, false)
+                addedByLite = spec !in entries
+                if (addedByLite) {
                     val updated = (entries + spec).joinToString(";")
                     val result = LitePrivilege.execute("settings", "put", "global", OVERLAY_SETTING, updated)
                     check(result.succeeded) { result.output.ifBlank { "Gagal meminta virtual display." } }
+                } else if (savedOwnership) {
+                    addedByLite = true
                 }
                 var found: Display? = null
                 for (attempt in 0 until 60) {
@@ -204,15 +211,28 @@ class LiteMainActivity : Activity() {
                 preferences.edit()
                     .putInt(KEY_DISPLAY_ID, target.displayId)
                     .putString(KEY_SPEC, spec)
+                    .putBoolean(KEY_OWNS_SPEC, addedByLite)
                     .apply()
                 target
             }.onSuccess { target ->
                 runOnUiThread {
                     button.isEnabled = true
-                    activateDisplay(target, spec)
+                    activateDisplay(target, spec, addedByLite)
                     setStatus("Aktif • Display ID ${target.displayId} • ${displayWidth}×${displayHeight}")
                 }
             }.onFailure { error ->
+                if (addedByLite) runCatching {
+                    val entries = readOverlaySetting().split(';').map { it.trim() }
+                        .filter { it.isNotEmpty() }.toMutableList()
+                    val index = entries.indexOf(spec)
+                    if (index >= 0) entries.removeAt(index)
+                    val cleanup = if (entries.isEmpty()) {
+                        LitePrivilege.execute("settings", "delete", "global", OVERLAY_SETTING)
+                    } else {
+                        LitePrivilege.execute("settings", "put", "global", OVERLAY_SETTING, entries.joinToString(";"))
+                    }
+                    check(cleanup.succeeded)
+                }
                 runOnUiThread {
                     button.isEnabled = true
                     setStatus("Gagal: ${error.message ?: error.javaClass.simpleName}")
@@ -227,13 +247,22 @@ class LiteMainActivity : Activity() {
             showMessage("Tidak ada virtual display milik Lite yang tercatat.")
             return
         }
+        if (!ownsSpec) {
+            activeDisplayId = Display.INVALID_DISPLAY
+            activeSpec = null
+            preferences.edit().remove(KEY_DISPLAY_ID).remove(KEY_SPEC).remove(KEY_OWNS_SPEC).apply()
+            setStatus("Lite melepas kendali. Display ini sudah ada sebelumnya, jadi tidak dihapus.")
+            return
+        }
         button.isEnabled = false
         setStatus("Mematikan virtual display…")
         worker.execute {
             runCatching {
                 val entries = readOverlaySetting().split(';')
                     .map { it.trim() }
-                    .filter { it.isNotEmpty() && it != spec }
+                    .filter { it.isNotEmpty() }.toMutableList()
+                val ownedIndex = entries.indexOf(spec)
+                if (ownedIndex >= 0) entries.removeAt(ownedIndex)
                 val result = if (entries.isEmpty()) {
                     LitePrivilege.execute("settings", "delete", "global", OVERLAY_SETTING)
                 } else {
@@ -249,7 +278,8 @@ class LiteMainActivity : Activity() {
                     button.isEnabled = true
                     activeDisplayId = Display.INVALID_DISPLAY
                     activeSpec = null
-                    preferences.edit().remove(KEY_DISPLAY_ID).remove(KEY_SPEC).apply()
+                    ownsSpec = false
+                    preferences.edit().remove(KEY_DISPLAY_ID).remove(KEY_SPEC).remove(KEY_OWNS_SPEC).apply()
                     setStatus("Virtual display dimatikan.")
                     updatePrivilegeStatus()
                 }
@@ -267,7 +297,7 @@ class LiteMainActivity : Activity() {
         val savedSpec = preferences.getString(KEY_SPEC, null)
         val existing = displayManager.getDisplay(savedId)
         if (existing != null && isOverlay(existing) && !savedSpec.isNullOrBlank()) {
-            activateDisplay(existing, savedSpec)
+            activateDisplay(existing, savedSpec, preferences.getBoolean(KEY_OWNS_SPEC, false))
             return
         }
         if (savedId != Display.INVALID_DISPLAY) {
@@ -275,9 +305,10 @@ class LiteMainActivity : Activity() {
         }
     }
 
-    private fun activateDisplay(display: Display, spec: String) {
+    private fun activateDisplay(display: Display, spec: String, owned: Boolean) {
         activeDisplayId = display.displayId
         activeSpec = spec
+        ownsSpec = owned
         val size = Point()
         @Suppress("DEPRECATION")
         display.getRealSize(size)
@@ -468,6 +499,7 @@ class LiteMainActivity : Activity() {
         const val PREFERENCES = "saku_dextop_lite"
         const val KEY_DISPLAY_ID = "display_id"
         const val KEY_SPEC = "display_spec"
+        const val KEY_OWNS_SPEC = "owns_display_spec"
         const val OVERLAY_SETTING = "overlay_display_devices"
         const val TYPE_OVERLAY = 4
         const val SHIZUKU_REQUEST_CODE = 200
