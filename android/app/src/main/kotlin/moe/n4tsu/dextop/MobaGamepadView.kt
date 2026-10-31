@@ -154,10 +154,14 @@ internal class MobaGamepadView(
         active[id] = touch
         when (region) {
             Region.ANALOG -> {
-                if (touchMapper.press(token(id), layout.joystickCenter.x, layout.joystickCenter.y)) updateAnalog(touch, x, y)
+                if (touchMapper.press(token(id), layout.joystickCenter.x, layout.joystickCenter.y)) {
+                    updateAnalog(touch, x, y, token(id))
+                } else {
+                    active.remove(id)
+                }
             }
             Region.SKILL_1 -> tapSkill(token(id), layout.skill1)
-            Region.SKILL_2 -> touchMapper.press(token(id), layout.skill2.x, layout.skill2.y)
+            Region.SKILL_2 -> if (!touchMapper.press(token(id), layout.skill2.x, layout.skill2.y)) active.remove(id)
             Region.SKILL_3 -> tapSkill(token(id), layout.skill3)
             Region.SPELL -> tapSkill(token(id), layout.spell)
             Region.NONE -> active.remove(id)
@@ -165,7 +169,9 @@ internal class MobaGamepadView(
     }
 
     private fun tapSkill(token: Int, point: PointF) {
-        if (touchMapper.press(token, point.x, point.y)) touchMapper.release(token)
+        if (touchMapper.press(token, point.x, point.y)) {
+            touchMapper.release(token)
+        }
     }
 
     private fun movePointer(id: Int, x: Float, y: Float) {
@@ -173,13 +179,13 @@ internal class MobaGamepadView(
         touch.lastX = x
         touch.lastY = y
         when (touch.region) {
-            Region.ANALOG -> updateAnalog(touch, x, y)
+            Region.ANALOG -> updateAnalog(touch, x, y, token(id))
             Region.SKILL_2 -> updateSkillAim(touch, x, y, token(id))
             else -> Unit
         }
     }
 
-    private fun updateAnalog(touch: ActiveTouch, x: Float, y: Float) {
+    private fun updateAnalog(touch: ActiveTouch, x: Float, y: Float, token: Int) {
         val dx = x - touch.downX
         val dy = y - touch.downY
         val length = hypot(dx.toDouble(), dy.toDouble()).toFloat()
@@ -188,7 +194,10 @@ internal class MobaGamepadView(
         val ny = (dy * scale / analogRadius).coerceIn(-1f, 1f)
         val targetX = (layout.joystickCenter.x + nx * layout.joystickRadius).coerceIn(0f, targetWidth - 1f)
         val targetY = (layout.joystickCenter.y + ny * layout.joystickRadius).coerceIn(0f, targetHeight - 1f)
-        touchMapper.move(tokenFor(touch), targetX, targetY)
+        if (!touchMapper.move(token, targetX, targetY)) {
+            active.entries.firstOrNull { it.value === touch }?.key?.let(active::remove)
+            onAnalogChanged(0f, 0f)
+        }
         onAnalogChanged(nx, ny)
     }
 
@@ -228,8 +237,6 @@ internal class MobaGamepadView(
     }
 
     private fun token(id: Int) = 1000 + id
-    private fun tokenFor(touch: ActiveTouch): Int = active.entries.firstOrNull { it.value === touch }?.key?.let(::token) ?: -1
-
     override fun performClick(): Boolean {
         super.performClick()
         return true
