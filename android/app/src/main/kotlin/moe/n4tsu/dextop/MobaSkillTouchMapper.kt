@@ -34,6 +34,7 @@ internal class MobaSkillTouchMapper(
     @Synchronized
     fun press(controlToken: Int, x: Float, y: Float): Boolean {
         if (pointers.containsKey(controlToken) || pointers.size >= MAX_POINTERS) return false
+        if (!x.isFinite() || !y.isFinite()) return false
 
         val pointerId = (0 until MAX_POINTERS).firstOrNull { candidate ->
             pointers.values.none { it.pointerId == candidate }
@@ -59,9 +60,18 @@ internal class MobaSkillTouchMapper(
     @Synchronized
     fun move(controlToken: Int, x: Float, y: Float): Boolean {
         val pointer = pointers[controlToken] ?: return false
+        if (!x.isFinite() || !y.isFinite()) return false
+        val previousX = pointer.x
+        val previousY = pointer.y
         pointer.x = x
         pointer.y = y
-        return dispatch(MotionEvent.ACTION_MOVE, pointers.values.toList(), downTime)
+        val accepted = dispatch(MotionEvent.ACTION_MOVE, pointers.values.toList(), downTime)
+        if (!accepted) {
+            pointer.x = previousX
+            pointer.y = previousY
+            cancel()
+        }
+        return accepted
     }
 
     /** Ends one control without releasing any other active control. */
@@ -74,8 +84,13 @@ internal class MobaSkillTouchMapper(
         else MotionEvent.ACTION_POINTER_UP or (actionIndex shl MotionEvent.ACTION_POINTER_INDEX_SHIFT)
 
         val accepted = dispatch(action, snapshot, downTime)
-        pointers.remove(controlToken)
-        if (pointers.isEmpty()) downTime = 0L
+        if (accepted) {
+            pointers.remove(controlToken)
+            if (pointers.isEmpty()) downTime = 0L
+        } else {
+            // Never leave an uncertain partially injected gesture active.
+            cancel()
+        }
         return accepted
     }
 
