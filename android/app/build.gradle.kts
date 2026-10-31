@@ -165,9 +165,6 @@ androidComponents {
 }
 
 dependencies {
-    // Required by legacy Linux Kotlin source files still compiled in the shared source set.
-    implementation("org.tukaani:xz:1.10")
-    implementation("org.apache.commons:commons-compress:1.28.0")
     implementation("com.android.tools.build:apksig:8.11.1")
     implementation("com.caverock:androidsvg-aar:1.4")
     implementation("androidx.window:window:1.5.1")
@@ -197,11 +194,4 @@ tasks.configureEach {
             }
         }
     }
-}
-
-// Linux shortcut APK generation is excluded from the Android-only build.
-
-// Make bundled Linux runtime payloads visible to Android JVM unit tests.
-tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
-    classpath += files("src/main/resources")
 }
