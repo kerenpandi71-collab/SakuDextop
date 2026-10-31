@@ -66,6 +66,7 @@ internal class LiteTouchpadView(context: Context) : View(context) {
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                parent?.requestDisallowInterceptTouchEvent(true)
                 downX = event.x
                 downY = event.y
                 lastX = event.x
@@ -146,6 +147,7 @@ internal class LiteTouchpadView(context: Context) : View(context) {
     }
 
     private fun resetGesture() {
+        parent?.requestDisallowInterceptTouchEvent(false)
         moved = false
         dragging = false
         scrolling = false
